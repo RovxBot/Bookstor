@@ -19,25 +19,58 @@ import { authAPI } from '../services/api';
 export default function SettingsScreen({ navigation }) {
   const { openMenu } = useMenu();
   const { theme: currentTheme, themeMode, changeTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [serverUrl, setServerUrl] = useState('');
   const [editingServerUrl, setEditingServerUrl] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [loadingRegistration, setLoadingRegistration] = useState(false);
   const [oauthProviders, setOauthProviders] = useState({
     entra: { enabled: false, configured: false },
     google: { enabled: false, configured: false },
     github: { enabled: false, configured: false },
   });
 
-  // Load server URL on mount
+  // Load server URL and registration status on mount
   useEffect(() => {
-    const loadServerUrl = async () => {
+    const loadSettings = async () => {
       const savedUrl = await authAPI.getServerUrl();
       if (savedUrl) {
         setServerUrl(savedUrl);
       }
+
+      // Load registration status if user is admin
+      if (user?.is_admin) {
+        try {
+          const status = await authAPI.getRegistrationStatus();
+          setRegistrationEnabled(status.enabled);
+        } catch (error) {
+          console.log('Could not load registration status:', error);
+        }
+      }
     };
-    loadServerUrl();
-  }, []);
+    loadSettings();
+  }, [user]);
+
+  const handleRegistrationToggle = async (enabled) => {
+    setLoadingRegistration(true);
+    try {
+      await authAPI.toggleRegistration(enabled);
+      setRegistrationEnabled(enabled);
+      Alert.alert(
+        'Success',
+        `Registration has been ${enabled ? 'enabled' : 'disabled'}`
+      );
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error.response?.data?.detail || 'Failed to update registration setting'
+      );
+      // Revert the switch
+      setRegistrationEnabled(!enabled);
+    } finally {
+      setLoadingRegistration(false);
+    }
+  };
 
   const handleServerUrlSave = async () => {
     if (!serverUrl) {
@@ -170,6 +203,35 @@ export default function SettingsScreen({ navigation }) {
             )}
           </View>
         </View>
+
+        {/* Admin Section - Registration Toggle */}
+        {user?.is_admin && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Administration</Text>
+            <Text style={styles.sectionDescription}>
+              Manage server settings (admin only)
+            </Text>
+
+            <View style={styles.adminItem}>
+              <View style={styles.adminInfo}>
+                <Ionicons name="person-add" size={24} color={currentTheme.colors.primary} />
+                <View style={styles.adminText}>
+                  <Text style={styles.adminLabel}>Allow New Registrations</Text>
+                  <Text style={styles.adminDescription}>
+                    {registrationEnabled
+                      ? 'New users can create accounts'
+                      : 'Registration is disabled'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={registrationEnabled}
+                onValueChange={handleRegistrationToggle}
+                disabled={loadingRegistration}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Theme Section */}
         <View style={styles.section}>
@@ -584,6 +646,34 @@ const createStyles = (theme) => StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  adminItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  adminInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  adminText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  adminLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: theme.colors.text,
+  },
+  adminDescription: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
   },
 });
 

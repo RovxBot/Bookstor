@@ -15,8 +15,9 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
+    is_admin: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

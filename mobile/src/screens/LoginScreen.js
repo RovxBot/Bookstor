@@ -20,6 +20,8 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
   const { login } = useAuth();
   const { theme } = useTheme();
 
@@ -31,10 +33,28 @@ export default function LoginScreen({ navigation }) {
       const savedUrl = await authAPI.getServerUrl();
       if (savedUrl) {
         setServerUrl(savedUrl);
+        checkRegistrationStatus(savedUrl);
       }
     };
     loadServerUrl();
   }, []);
+
+  // Check registration status when server URL changes
+  const checkRegistrationStatus = async (url) => {
+    if (!url) return;
+
+    setCheckingRegistration(true);
+    try {
+      await authAPI.setServerUrl(url);
+      const status = await authAPI.getRegistrationStatus();
+      setRegistrationEnabled(status.enabled);
+    } catch (error) {
+      console.log('Could not check registration status:', error);
+      setRegistrationEnabled(false);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!serverUrl || !email || !password) {
@@ -77,7 +97,17 @@ export default function LoginScreen({ navigation }) {
             placeholder="http://192.168.1.100:8000/api"
             placeholderTextColor={theme.colors.textSecondary}
             value={serverUrl}
-            onChangeText={setServerUrl}
+            onChangeText={(text) => {
+              setServerUrl(text);
+              if (text.startsWith('http://') || text.startsWith('https://')) {
+                checkRegistrationStatus(text);
+              }
+            }}
+            onBlur={() => {
+              if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
+                checkRegistrationStatus(serverUrl);
+              }
+            }}
             autoCapitalize="none"
             keyboardType="url"
           />
@@ -118,14 +148,22 @@ export default function LoginScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.linkText}>
-              Don't have an account? Register
+          {registrationEnabled && (
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.linkText}>
+                Don't have an account? Register
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {!registrationEnabled && !checkingRegistration && serverUrl && (
+            <Text style={styles.disabledText}>
+              Registration is currently disabled
             </Text>
-          </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -203,6 +241,13 @@ const createStyles = (theme) => StyleSheet.create({
   linkText: {
     color: theme.colors.primary,
     fontSize: 16,
+  },
+  disabledText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });
 

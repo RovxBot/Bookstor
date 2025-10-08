@@ -80,6 +80,19 @@ export const authAPI = {
   getServerUrl: async () => {
     return await AsyncStorage.getItem('serverUrl');
   },
+
+  getRegistrationStatus: async () => {
+    const serverUrl = await getServerUrl();
+    const response = await axios.get(`${serverUrl}/auth/registration-status`);
+    return response.data;
+  },
+
+  toggleRegistration: async (enabled) => {
+    const response = await api.post('/auth/toggle-registration', null, {
+      params: { enabled }
+    });
+    return response.data;
+  },
 };
 
 // Books API
