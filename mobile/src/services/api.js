@@ -1,17 +1,30 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config';
 
+// Get server URL from AsyncStorage
+const getServerUrl = async () => {
+  const serverUrl = await AsyncStorage.getItem('serverUrl');
+  if (!serverUrl) {
+    throw new Error('Server URL not configured. Please set it in the login screen.');
+  }
+  return serverUrl;
+};
+
+// Create axios instance without baseURL (will be set per request)
 const api = axios.create({
-  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add token to requests
+// Add token and server URL to requests
 api.interceptors.request.use(
   async (config) => {
+    // Get server URL from AsyncStorage
+    const serverUrl = await getServerUrl();
+    config.baseURL = serverUrl;
+
+    // Add auth token if available
     const token = await AsyncStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -29,32 +42,43 @@ export const authAPI = {
     const response = await api.post('/auth/register', { email, password });
     return response.data;
   },
-  
+
   login: async (email, password) => {
+    const serverUrl = await getServerUrl();
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
-    
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
+
+    const response = await axios.post(`${serverUrl}/auth/login`, formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-    
+
     if (response.data.access_token) {
       await AsyncStorage.setItem('token', response.data.access_token);
     }
-    
+
     return response.data;
   },
-  
+
   logout: async () => {
     await AsyncStorage.removeItem('token');
   },
-  
+
   getMe: async () => {
     const response = await api.get('/auth/me');
     return response.data;
+  },
+
+  setServerUrl: async (url) => {
+    // Ensure URL doesn't end with slash
+    const cleanUrl = url.trim().replace(/\/$/, '');
+    await AsyncStorage.setItem('serverUrl', cleanUrl);
+  },
+
+  getServerUrl: async () => {
+    return await AsyncStorage.getItem('serverUrl');
   },
 };
 
