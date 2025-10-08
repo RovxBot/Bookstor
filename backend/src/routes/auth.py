@@ -21,7 +21,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     user_count = db.query(models.User).count()
 
     # If this is not the first user and registration is disabled, reject
-    if user_count > 0 and registration_enabled and registration_enabled.value == "false":
+    # Handle case where registration_enabled is None (not in DB yet)
+    if user_count > 0 and (not registration_enabled or registration_enabled.value == "false"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Registration is currently disabled. Please contact the administrator."
