@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: bookstor-db
+    environment:
+      POSTGRES_USER: bookstor
+      POSTGRES_PASSWORD: bookstor_password
+      POSTGRES_DB: bookstor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "54320:5432"  # Using obscure port 54320 to avoid conflicts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookstor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: bookstor-backend
+    environment:
+      DATABASE_URL: postgresql://bookstor:bookstor_password@db:5432/bookstor
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+
