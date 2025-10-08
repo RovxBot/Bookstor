@@ -55,8 +55,13 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Signing APK..."
+
+            # Find the latest build-tools version
+            BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
+            echo "Using build-tools version: $BUILD_TOOLS_VERSION"
+
             echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
-            $ANDROID_HOME/build-tools/33.0.0/apksigner sign \
+            $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign \
               --ks release.keystore \
               --ks-key-alias "$KEY_ALIAS" \
               --ks-pass pass:"$KEYSTORE_PASSWORD" \
