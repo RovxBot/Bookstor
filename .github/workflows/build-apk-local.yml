@@ -53,12 +53,18 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
             echo "Signing APK..."
 
             # Find the latest build-tools version
             BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
             echo "Using build-tools version: $BUILD_TOOLS_VERSION"
+
+            # Use keystore password for key password if key password is not set
+            if [ -z "$KEY_PASSWORD" ]; then
+              echo "Using keystore password for key password (KEY_PASSWORD not set)"
+              KEY_PASSWORD="$KEYSTORE_PASSWORD"
+            fi
 
             echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
             $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign \
@@ -71,12 +77,15 @@ jobs:
             rm release.keystore
             echo "✅ APK signed successfully"
           else
-            echo "⚠️  No signing keystore found - APK will be unsigned"
-            echo "To sign APKs, add the following secrets to GitHub:"
-            echo "  - ANDROID_KEYSTORE_BASE64"
-            echo "  - ANDROID_KEY_ALIAS"
-            echo "  - ANDROID_KEYSTORE_PASSWORD"
-            echo "  - ANDROID_KEY_PASSWORD"
+            echo "⚠️  Missing signing secrets - APK will be unsigned"
+            echo ""
+            echo "To sign APKs, add ALL of the following secrets to GitHub:"
+            echo "  - ANDROID_KEYSTORE_BASE64 $([ -n "$KEYSTORE_BASE64" ] && echo "✅" || echo "❌ MISSING")"
+            echo "  - ANDROID_KEY_ALIAS $([ -n "$KEY_ALIAS" ] && echo "✅" || echo "❌ MISSING")"
+            echo "  - ANDROID_KEYSTORE_PASSWORD $([ -n "$KEYSTORE_PASSWORD" ] && echo "✅" || echo "❌ MISSING")"
+            echo "  - ANDROID_KEY_PASSWORD (optional, will use keystore password if not set)"
+            echo ""
+            echo "See ANDROID_SIGNING_SETUP.md for instructions"
           fi
 
       - name: Upload APK
