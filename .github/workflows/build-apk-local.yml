@@ -56,6 +56,20 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
             echo "Signing APK..."
 
+            # Find the unsigned APK file
+            UNSIGNED_APK=$(ls *-release-unsigned.apk 2>/dev/null || ls *-release.apk 2>/dev/null || echo "")
+
+            if [ -z "$UNSIGNED_APK" ]; then
+              echo "❌ Error: Could not find unsigned APK file"
+              echo "Available files:"
+              ls -la
+              exit 1
+            fi
+
+            echo "Found unsigned APK: $UNSIGNED_APK"
+            SIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-signed.apk"
+            echo "Will create signed APK: $SIGNED_APK"
+
             # Find the latest build-tools version
             BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
             echo "Using build-tools version: $BUILD_TOOLS_VERSION"
@@ -72,10 +86,10 @@ jobs:
               --ks-key-alias "$KEY_ALIAS" \
               --ks-pass pass:"$KEYSTORE_PASSWORD" \
               --key-pass pass:"$KEY_PASSWORD" \
-              --out app-release-signed.apk \
-              app-release-unsigned.apk
+              --out "$SIGNED_APK" \
+              "$UNSIGNED_APK"
             rm release.keystore
-            echo "✅ APK signed successfully"
+            echo "✅ APK signed successfully: $SIGNED_APK"
           else
             echo "⚠️  Missing signing secrets - APK will be unsigned"
             echo ""
