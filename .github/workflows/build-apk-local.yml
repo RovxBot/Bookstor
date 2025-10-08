@@ -46,18 +46,33 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Sign APK
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         working-directory: mobile/android/app/build/outputs/apk/release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
-          $ANDROID_HOME/build-tools/33.0.0/apksigner sign \
-            --ks release.keystore \
-            --ks-key-alias ${{ secrets.ANDROID_KEY_ALIAS }} \
-            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
-            --out app-release-signed.apk \
-            app-release-unsigned.apk
-          rm release.keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Signing APK..."
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            $ANDROID_HOME/build-tools/33.0.0/apksigner sign \
+              --ks release.keystore \
+              --ks-key-alias "$KEY_ALIAS" \
+              --ks-pass pass:"$KEYSTORE_PASSWORD" \
+              --key-pass pass:"$KEY_PASSWORD" \
+              --out app-release-signed.apk \
+              app-release-unsigned.apk
+            rm release.keystore
+            echo "✅ APK signed successfully"
+          else
+            echo "⚠️  No signing keystore found - APK will be unsigned"
+            echo "To sign APKs, add the following secrets to GitHub:"
+            echo "  - ANDROID_KEYSTORE_BASE64"
+            echo "  - ANDROID_KEY_ALIAS"
+            echo "  - ANDROID_KEYSTORE_PASSWORD"
+            echo "  - ANDROID_KEY_PASSWORD"
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
