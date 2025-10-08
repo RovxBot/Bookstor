@@ -1,4 +1,4 @@
-# 📚 Bookstor
+# Bookstor
 
 [![Build Docker Image](https://github.com/RovxBot/Bookstor/actions/workflows/build-docker.yml/badge.svg)](https://github.com/RovxBot/Bookstor/actions/workflows/build-docker.yml)
 [![Build Android APK](https://github.com/RovxBot/Bookstor/actions/workflows/build-apk-local.yml/badge.svg)](https://github.com/RovxBot/Bookstor/actions/workflows/build-apk-local.yml)
@@ -7,7 +7,7 @@
 
 Personal library management system with barcode scanning, automatic series detection, and wishlist management.
 
-## 📦 Latest Releases
+## Latest Releases
 
 - **Docker Image**: `ghcr.io/rovxbot/bookstor:latest`
 - **Android APK**: [Download from Releases](https://github.com/RovxBot/Bookstor/releases)
@@ -79,9 +79,9 @@ Personal library management system with barcode scanning, automatic series detec
    - Enter your server URL
 
 #### iOS
-1. Download from the App Store (coming soon. Maybe.)
+1. Download from the App Store (Coming soon. Maybe.)
 
-## 🔍 Version Information
+## Version Information
 
 ### Check Docker Image Version
 
