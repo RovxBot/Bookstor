@@ -54,8 +54,29 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    // Validate password strength
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      Alert.alert('Error', 'Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      Alert.alert('Error', 'Password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      Alert.alert('Error', 'Password must contain at least one digit');
+      return;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password)) {
+      Alert.alert('Error', 'Password must contain at least one special character');
       return;
     }
 
@@ -115,6 +136,9 @@ export default function RegisterScreen({ navigation }) {
             onChangeText={setPassword}
             secureTextEntry
           />
+          <Text style={styles.hint}>
+            Must be at least 8 characters with uppercase, lowercase, number, and special character
+          </Text>
 
           <Text style={styles.label}>Confirm Password</Text>
           <TextInput

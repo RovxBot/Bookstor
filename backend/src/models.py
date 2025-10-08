@@ -18,7 +18,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     entra_id = Column(String, unique=True, nullable=True)
-    hashed_password = Column(String, nullable=True)  # Optional if using only Entra SSO
+    hashed_password = Column(String, nullable=False)  # Required - password authentication is mandatory
     is_admin = Column(Boolean, default=False)  # First user is automatically admin
     created_at = Column(DateTime, default=datetime.utcnow)
 

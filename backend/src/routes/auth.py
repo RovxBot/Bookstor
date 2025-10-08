@@ -36,9 +36,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         )
 
     # Create new user
-    hashed_password = None
-    if user.password:
-        hashed_password = auth.get_password_hash(user.password)
+    # Password is now required and validated by schema
+    hashed_password = auth.get_password_hash(user.password)
 
     # First user is automatically admin
     is_first_user = user_count == 0
