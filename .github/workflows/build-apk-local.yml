@@ -109,11 +109,52 @@ jobs:
           path: mobile/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
 
-      - name: Create Release
+      - name: Get version from app.json
+        id: get_version
+        working-directory: mobile
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.extra.version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Create Draft Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Bookstor ${{ steps.get_version.outputs.version }}
+          draft: true
+          prerelease: true
+          body: |
+            ## Bookstor ${{ steps.get_version.outputs.version }}
+
+            ### 📱 Android APK
+            Download the APK below and install on your Android device.
+
+            ### 🔐 Security Notes
+            - First user automatically becomes admin
+            - Registration disabled after first user (can be re-enabled in settings)
+            - Strong password requirements enforced
+
+            ### 📝 Changelog
+            See commit history for detailed changes.
+
+            **Build Information:**
+            - Commit: ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}
+            - Built: ${{ github.event.head_commit.timestamp }}
+          files: mobile/android/app/build/outputs/apk/release/*.apk
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Tagged Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: mobile/android/app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
