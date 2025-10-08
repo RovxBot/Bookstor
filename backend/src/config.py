@@ -25,6 +25,17 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
+    # CORS Configuration
+    # Comma-separated list of allowed origins
+    # Use "*" for development only, specify exact origins in production
+    cors_origins: str = "*"
+
+    def get_cors_origins(self) -> list:
+        """Parse CORS origins from comma-separated string"""
+        if self.cors_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
     @field_validator('secret_key')
     @classmethod
     def validate_secret_key(cls, v: str) -> str:

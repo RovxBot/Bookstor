@@ -118,12 +118,23 @@ Edit your `.env` file:
 
 ```env
 # Required
-DATABASE_URL=postgresql://bookstor:bookstor@db:5432/bookstor
-SECRET_KEY=your-secret-key-here
+DATABASE_URL=postgresql://bookstor:bookstor_password@db:5432/bookstor
+SECRET_KEY=your-generated-secret-key-here
 
 # Optional - Get from https://console.cloud.google.com/
 GOOGLE_BOOKS_API_KEY=your-api-key
+
+# CORS Configuration (optional)
+# Use "*" for development (credentials disabled automatically)
+# In production, specify exact origins:
+# CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
+CORS_ORIGINS=*
 ```
+
+**Security Notes:**
+- `SECRET_KEY` must be at least 32 characters and cryptographically secure
+- `CORS_ORIGINS=*` is convenient for development but disables credentials
+- In production, always specify exact allowed origins for security
 
 ### Mobile App Configuration
 
