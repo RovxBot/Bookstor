@@ -46,7 +46,7 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Sign APK
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         working-directory: mobile/android/app/build/outputs/apk/release
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
