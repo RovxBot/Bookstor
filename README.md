@@ -9,6 +9,7 @@ Personal library management system with barcode scanning, automatic series detec
 
 ## Latest Releases
 
+- **Version**: `beta-v0.0.2`
 - **Docker Image**: `ghcr.io/rovxbot/bookstor:latest`
 - **Android APK**: [Download from Releases](https://github.com/RovxBot/Bookstor/releases)
 
@@ -43,13 +44,18 @@ Personal library management system with barcode scanning, automatic series detec
 
 2. **Create environment file:**
    ```bash
-   # Create .env file
-   cat > .env << 'ENVEOF'
-   DATABASE_URL=postgresql://bookstor:bookstor@db:5432/bookstor
-   SECRET_KEY=$(openssl rand -hex 32)
-   GOOGLE_BOOKS_API_KEY=your_api_key_here
-   ENVEOF
+   # Copy example file
+   cp .env.example .env
+
+   # Generate a secure SECRET_KEY (REQUIRED)
+   python -c 'import secrets; print(secrets.token_urlsafe(32))'
+   # Or use: openssl rand -base64 32
+
+   # Edit .env and add your SECRET_KEY
+   nano .env
    ```
+
+   **Important:** The `SECRET_KEY` is required and must be at least 32 characters. The application will not start without it.
 
 3. **Start the server:**
    ```bash
@@ -112,12 +118,23 @@ Edit your `.env` file:
 
 ```env
 # Required
-DATABASE_URL=postgresql://bookstor:bookstor@db:5432/bookstor
-SECRET_KEY=your-secret-key-here
+DATABASE_URL=postgresql://bookstor:bookstor_password@db:5432/bookstor
+SECRET_KEY=your-generated-secret-key-here
 
 # Optional - Get from https://console.cloud.google.com/
 GOOGLE_BOOKS_API_KEY=your-api-key
+
+# CORS Configuration (optional)
+# Use "*" for development (credentials disabled automatically)
+# In production, specify exact origins:
+# CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
+CORS_ORIGINS=*
 ```
+
+**Security Notes:**
+- `SECRET_KEY` must be at least 32 characters and cryptographically secure
+- `CORS_ORIGINS=*` is convenient for development but disables credentials
+- In production, always specify exact allowed origins for security
 
 ### Mobile App Configuration
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -10,17 +11,97 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useMenu } from '../context/MenuContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../services/api';
 
 export default function SettingsScreen({ navigation }) {
   const { openMenu } = useMenu();
   const { theme: currentTheme, themeMode, changeTheme } = useTheme();
+  const { logout, user } = useAuth();
+  const [serverUrl, setServerUrl] = useState('');
+  const [editingServerUrl, setEditingServerUrl] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [loadingRegistration, setLoadingRegistration] = useState(false);
   const [oauthProviders, setOauthProviders] = useState({
     entra: { enabled: false, configured: false },
     google: { enabled: false, configured: false },
     github: { enabled: false, configured: false },
   });
+
+  // Load server URL and registration status on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      const savedUrl = await authAPI.getServerUrl();
+      if (savedUrl) {
+        setServerUrl(savedUrl);
+      }
+
+      // Load registration status if user is admin
+      if (user?.is_admin) {
+        try {
+          const status = await authAPI.getRegistrationStatus();
+          setRegistrationEnabled(status.enabled);
+        } catch (error) {
+          console.log('Could not load registration status:', error);
+        }
+      }
+    };
+    loadSettings();
+  }, [user]);
+
+  const handleRegistrationToggle = async (enabled) => {
+    setLoadingRegistration(true);
+    try {
+      await authAPI.toggleRegistration(enabled);
+      setRegistrationEnabled(enabled);
+      Alert.alert(
+        'Success',
+        `Registration has been ${enabled ? 'enabled' : 'disabled'}`
+      );
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error.response?.data?.detail || 'Failed to update registration setting'
+      );
+      // Revert the switch
+      setRegistrationEnabled(!enabled);
+    } finally {
+      setLoadingRegistration(false);
+    }
+  };
+
+  const handleServerUrlSave = async () => {
+    if (!serverUrl) {
+      Alert.alert('Error', 'Server URL cannot be empty');
+      return;
+    }
+
+    if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+      Alert.alert('Error', 'Server URL must start with http:// or https://');
+      return;
+    }
+
+    Alert.alert(
+      'Change Server URL',
+      'Changing the server URL will log you out. You will need to sign in again with the new server.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Change & Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await authAPI.setServerUrl(serverUrl);
+            await logout();
+            setEditingServerUrl(false);
+            Alert.alert('Success', 'Server URL updated. Please login again.');
+          },
+        },
+      ]
+    );
+  };
 
   const handleThemeChange = (newTheme) => {
     changeTheme(newTheme);
@@ -70,6 +151,89 @@ export default function SettingsScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.content}>
+        {/* Server Configuration Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Server Configuration</Text>
+          <Text style={styles.sectionDescription}>
+            Configure your Bookstor server connection
+          </Text>
+
+          <View style={styles.serverUrlContainer}>
+            <Text style={styles.label}>Server URL</Text>
+            {editingServerUrl ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="http://192.168.1.100:8000/api"
+                  placeholderTextColor={currentTheme.colors.textSecondary}
+                  value={serverUrl}
+                  onChangeText={setServerUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={[styles.smallButton, styles.cancelButton]}
+                    onPress={() => {
+                      setEditingServerUrl(false);
+                      // Reload original URL
+                      authAPI.getServerUrl().then(url => setServerUrl(url || ''));
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.smallButton, styles.saveButton]}
+                    onPress={handleServerUrlSave}
+                  >
+                    <Text style={styles.saveButtonText}>Save & Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.serverUrlText}>{serverUrl || 'Not configured'}</Text>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => setEditingServerUrl(true)}
+                >
+                  <Ionicons name="pencil" size={16} color="#fff" />
+                  <Text style={styles.editButtonText}>Change Server</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Admin Section - Registration Toggle */}
+        {user?.is_admin && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Administration</Text>
+            <Text style={styles.sectionDescription}>
+              Manage server settings (admin only)
+            </Text>
+
+            <View style={styles.adminItem}>
+              <View style={styles.adminInfo}>
+                <Ionicons name="person-add" size={24} color={currentTheme.colors.primary} />
+                <View style={styles.adminText}>
+                  <Text style={styles.adminLabel}>Allow New Registrations</Text>
+                  <Text style={styles.adminDescription}>
+                    {registrationEnabled
+                      ? 'New users can create accounts'
+                      : 'Registration is disabled'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={registrationEnabled}
+                onValueChange={handleRegistrationToggle}
+                disabled={loadingRegistration}
+              />
+            </View>
+          </View>
+        )}
+
         {/* Theme Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
@@ -257,12 +421,16 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
           <View style={styles.aboutItem}>
-            <Text style={styles.aboutLabel}>Version</Text>
-            <Text style={styles.aboutValue}>1.0.0</Text>
+            <Text style={styles.aboutLabel}>App Version</Text>
+            <Text style={styles.aboutValue}>
+              {Constants.expoConfig?.extra?.version || 'beta-v0.0.2'}
+            </Text>
           </View>
           <View style={styles.aboutItem}>
-            <Text style={styles.aboutLabel}>Build</Text>
-            <Text style={styles.aboutValue}>2024.01</Text>
+            <Text style={styles.aboutLabel}>App Name</Text>
+            <Text style={styles.aboutValue}>
+              {Constants.expoConfig?.name || 'Bookstor'}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -410,6 +578,106 @@ const createStyles = (theme) => StyleSheet.create({
   },
   aboutValue: {
     fontSize: 16,
+    color: theme.colors.textSecondary,
+  },
+  serverUrlContainer: {
+    marginTop: 10,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: theme.colors.card,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: theme.colors.text,
+    marginBottom: 10,
+  },
+  serverUrlText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.card,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  smallButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.inactive,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cancelButtonText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  adminItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  adminInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  adminText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  adminLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: theme.colors.text,
+  },
+  adminDescription: {
+    fontSize: 13,
     color: theme.colors.textSecondary,
   },
 });

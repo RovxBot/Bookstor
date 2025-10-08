@@ -10,15 +10,22 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Bookstor API",
     description="Personal library management system with barcode scanning",
-    version="1.0.0"
+    version="beta-v0.0.2"
 )
 
 # Configure CORS for mobile app
+# Get allowed origins from settings
+cors_origins = settings.get_cors_origins()
+
+# Security: Don't allow credentials with wildcard origins
+# If using wildcard (*), credentials must be disabled
+allow_credentials = "*" not in cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your mobile app's origin
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=allow_credentials,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -32,7 +39,7 @@ def root():
     """Root endpoint"""
     return {
         "message": "Welcome to Bookstor API",
-        "version": "1.0.0",
+        "version": "beta-v0.0.2",
         "docs": "/docs"
     }
 
