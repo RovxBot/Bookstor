@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useMenu } from '../context/MenuContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -420,12 +421,16 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
           <View style={styles.aboutItem}>
-            <Text style={styles.aboutLabel}>Version</Text>
-            <Text style={styles.aboutValue}>1.0.0</Text>
+            <Text style={styles.aboutLabel}>App Version</Text>
+            <Text style={styles.aboutValue}>
+              {Constants.expoConfig?.extra?.version || 'beta-v0.0.2'}
+            </Text>
           </View>
           <View style={styles.aboutItem}>
-            <Text style={styles.aboutLabel}>Build</Text>
-            <Text style={styles.aboutValue}>2024.01</Text>
+            <Text style={styles.aboutLabel}>App Name</Text>
+            <Text style={styles.aboutValue}>
+              {Constants.expoConfig?.name || 'Bookstor'}
+            </Text>
           </View>
         </View>
       </ScrollView>

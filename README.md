@@ -9,6 +9,7 @@ Personal library management system with barcode scanning, automatic series detec
 
 ## Latest Releases
 
+- **Version**: `beta-v0.0.2`
 - **Docker Image**: `ghcr.io/rovxbot/bookstor:latest`
 - **Android APK**: [Download from Releases](https://github.com/RovxBot/Bookstor/releases)
 

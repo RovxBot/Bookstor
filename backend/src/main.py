@@ -10,7 +10,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Bookstor API",
     description="Personal library management system with barcode scanning",
-    version="1.0.0"
+    version="beta-v0.0.2"
 )
 
 # Configure CORS for mobile app
@@ -32,7 +32,7 @@ def root():
     """Root endpoint"""
     return {
         "message": "Welcome to Bookstor API",
-        "version": "1.0.0",
+        "version": "beta-v0.0.2",
         "docs": "/docs"
     }
 
