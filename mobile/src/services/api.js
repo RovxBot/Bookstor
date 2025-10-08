@@ -36,6 +36,29 @@ api.interceptors.request.use(
   }
 );
 
+// Handle 401 errors (unauthorized) - automatically logout
+api.interceptors.response.use(
+  (response) => {
+    // Pass through successful responses
+    return response;
+  },
+  async (error) => {
+    // Check if error is 401 Unauthorized
+    if (error.response && error.response.status === 401) {
+      // Clear token from storage
+      await AsyncStorage.removeItem('token');
+
+      // Note: We can't directly navigate here as we don't have access to navigation
+      // The AuthContext will detect the missing token and redirect to login
+      // This is handled by the checkAuth function in AuthContext
+
+      console.log('401 Unauthorized - Token cleared, user will be logged out');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Auth API
 export const authAPI = {
   register: async (email, password) => {

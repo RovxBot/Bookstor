@@ -10,7 +10,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+
+    // Set up periodic auth check (every 5 minutes)
+    // This will catch expired tokens and automatically logout
+    const authCheckInterval = setInterval(() => {
+      if (user) {
+        checkAuth();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(authCheckInterval);
+  }, [user]);
 
   const checkAuth = async () => {
     try {
@@ -18,10 +28,20 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         const userData = await authAPI.getMe();
         setUser(userData);
+      } else {
+        // No token found, ensure user is null
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await AsyncStorage.removeItem('token');
+      // If 401, token is invalid/expired - already cleared by interceptor
+      if (error.response?.status === 401) {
+        setUser(null);
+      } else {
+        // For other errors, also clear token to be safe
+        await AsyncStorage.removeItem('token');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -34,6 +54,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true };
     } catch (error) {
+      // If 401, token was already cleared by interceptor
+      if (error.response?.status === 401) {
+        setUser(null);
+      }
       return {
         success: false,
         error: error.response?.data?.detail || 'Login failed',
