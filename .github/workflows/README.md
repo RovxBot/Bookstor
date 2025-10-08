@@ -2,7 +2,37 @@
 
 ## Available Workflows
 
-### 1. Build APK with EAS (`build-apk.yml`)
+### 1. Build Docker Image (`build-docker.yml`)
+
+Builds and pushes the backend Docker image to GitHub Container Registry (ghcr.io).
+
+**Features:**
+- Automatically builds on backend changes
+- Pushes to GitHub Container Registry
+- Multi-platform support (amd64, arm64)
+- Automatic tagging (latest, branch, SHA)
+- Build caching for faster builds
+
+**Setup:**
+No setup required! Uses GitHub's built-in container registry and authentication.
+
+**Usage:**
+- Automatically triggers on push to `main` when `backend/**` files change
+- Or manually trigger from Actions tab
+- Image will be available at: `ghcr.io/rovxbot/bookstor:latest`
+
+**Pull the image:**
+```bash
+docker pull ghcr.io/rovxbot/bookstor:latest
+```
+
+**Tags created:**
+- `latest` - Latest build from main branch
+- `main` - Latest build from main branch
+- `main-<sha>` - Specific commit SHA
+- `v1.0.0` - Semantic version (if you create a git tag)
+
+### 2. Build APK with EAS (`build-apk.yml`) - MOBILE
 
 Uses Expo Application Services (EAS) to build the APK in the cloud.
 
@@ -32,7 +62,7 @@ Uses Expo Application Services (EAS) to build the APK in the cloud.
 - Automatically triggers on push to `main` when `mobile/**` files change
 - Or manually trigger from Actions tab
 
-### 2. Build APK Locally (`build-apk-local.yml`)
+### 3. Build APK Locally (`build-apk-local.yml`) - MOBILE
 
 Builds the APK directly in GitHub Actions without external services.
 
