@@ -44,13 +44,18 @@ Personal library management system with barcode scanning, automatic series detec
 
 2. **Create environment file:**
    ```bash
-   # Create .env file
-   cat > .env << 'ENVEOF'
-   DATABASE_URL=postgresql://bookstor:bookstor@db:5432/bookstor
-   SECRET_KEY=$(openssl rand -hex 32)
-   GOOGLE_BOOKS_API_KEY=your_api_key_here
-   ENVEOF
+   # Copy example file
+   cp .env.example .env
+
+   # Generate a secure SECRET_KEY (REQUIRED)
+   python -c 'import secrets; print(secrets.token_urlsafe(32))'
+   # Or use: openssl rand -base64 32
+
+   # Edit .env and add your SECRET_KEY
+   nano .env
    ```
+
+   **Important:** The `SECRET_KEY` is required and must be at least 32 characters. The application will not start without it.
 
 3. **Start the server:**
    ```bash

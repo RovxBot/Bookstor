@@ -24,7 +24,8 @@ services:
     environment:
       DATABASE_URL: postgresql://bookstor:bookstor_password@db:5432/bookstor
       GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      # SECRET_KEY is REQUIRED - generate with: python -c 'import secrets; print(secrets.token_urlsafe(32))'
+      SECRET_KEY: ${SECRET_KEY}
       ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
       ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
       ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
