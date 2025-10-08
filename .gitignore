@@ -73,3 +73,10 @@ mobile/android/app/build/
 mobile/android/.gradle/
 mobile/android/local.properties
 
+# Android Signing
+*.keystore
+*.jks
+*.base64
+bookstor-release.keystore
+bookstor-keystore.base64
+
