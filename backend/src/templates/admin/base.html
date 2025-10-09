@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bookstor Admin{% endblock %}</title>
+    <link rel="stylesheet" href="/static/admin.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if current_user %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>📚 Bookstor Admin</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/admin/dashboard" class="nav-link {% if request.url.path == '/admin/dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="/admin/users" class="nav-link {% if request.url.path == '/admin/users' %}active{% endif %}">Users</a>
+                <a href="/admin/settings" class="nav-link {% if request.url.path == '/admin/settings' %}active{% endif %}">Settings</a>
+                <a href="/docs" class="nav-link" target="_blank">API Docs</a>
+            </div>
+            <div class="nav-user">
+                <span class="user-email">{{ current_user.email }}</span>
+                <a href="/admin/logout" class="btn btn-secondary btn-sm">Logout</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Bookstor Admin Panel &copy; 2025</p>
+    </footer>
+
+    <script src="/static/admin.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,215 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Management - Bookstor Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>User Management</h1>
+        <button class="btn btn-primary" onclick="showCreateUserModal()">
+            <span>➕</span> Create User
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Admin</th>
+                    <th>Books</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in user_data %}
+                <tr>
+                    <td>{{ item.user.id }}</td>
+                    <td>{{ item.user.email }}</td>
+                    <td>
+                        <span class="badge {% if item.user.is_admin %}badge-success{% else %}badge-secondary{% endif %}">
+                            {% if item.user.is_admin %}Admin{% else %}User{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ item.book_count }}</td>
+                    <td>{{ item.user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <div class="action-buttons-inline">
+                            {% if item.user.id != current_user.id %}
+                            <button 
+                                class="btn btn-sm btn-secondary" 
+                                onclick="toggleAdmin({{ item.user.id }}, {{ 'false' if item.user.is_admin else 'true' }})"
+                            >
+                                {% if item.user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
+                            </button>
+                            <button 
+                                class="btn btn-sm btn-danger" 
+                                onclick="deleteUser({{ item.user.id }}, '{{ item.user.email }}')"
+                            >
+                                Delete
+                            </button>
+                            {% else %}
+                            <span class="text-muted">(You)</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="createUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Create New User</h2>
+            <button class="modal-close" onclick="hideCreateUserModal()">&times;</button>
+        </div>
+        <form id="createUserForm" onsubmit="createUser(event)">
+            <div class="form-group">
+                <label for="newUserEmail">Email</label>
+                <input 
+                    type="email" 
+                    id="newUserEmail" 
+                    name="email" 
+                    required
+                    placeholder="user@example.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="newUserPassword">Password</label>
+                <input 
+                    type="password" 
+                    id="newUserPassword" 
+                    name="password" 
+                    required
+                    placeholder="Minimum 8 characters"
+                >
+                <small class="form-help">
+                    Password must be at least 8 characters long
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input 
+                        type="checkbox" 
+                        id="newUserIsAdmin" 
+                        name="is_admin"
+                    >
+                    <span>Make this user an admin</span>
+                </label>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideCreateUserModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Create User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'flex';
+}
+
+function hideCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'none';
+    document.getElementById('createUserForm').reset();
+}
+
+async function createUser(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/admin/api/users', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            alert('User created successfully!');
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.detail || 'Failed to create user'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function toggleAdmin(userId, makeAdmin) {
+    const action = makeAdmin === 'true' ? 'grant admin access to' : 'remove admin access from';
+    
+    if (!confirm(`Are you sure you want to ${action} this user?`)) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('is_admin', makeAdmin);
+        
+        const response = await fetch(`/admin/api/users/${userId}/admin`, {
+            method: 'PATCH',
+            body: formData
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.detail || 'Failed to update user'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function deleteUser(userId, email) {
+    if (!confirm(`Are you sure you want to delete user "${email}"? This will also delete all their books. This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/api/users/${userId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('User deleted successfully');
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.detail || 'Failed to delete user'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('createUserModal');
+    if (event.target === modal) {
+        hideCreateUserModal();
+    }
+}
+</script>
+{% endblock %}
+

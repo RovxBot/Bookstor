@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - Bookstor Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Welcome to the Bookstor admin panel</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <h3>{{ stats.user_count }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+                <h3>{{ stats.book_count }}</h3>
+                <p>Total Books</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🔑</div>
+            <div class="stat-content">
+                <h3>{{ stats.admin_count }}</h3>
+                <p>Admin Users</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">{% if stats.registration_enabled %}✅{% else %}🔒{% endif %}</div>
+            <div class="stat-content">
+                <h3>{% if stats.registration_enabled %}Open{% else %}Closed{% endif %}</h3>
+                <p>Registration</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-buttons">
+            <a href="/admin/users" class="btn btn-primary">
+                <span>👥</span> Manage Users
+            </a>
+            <a href="/admin/settings" class="btn btn-primary">
+                <span>⚙️</span> Settings
+            </a>
+            <a href="/docs" class="btn btn-secondary" target="_blank">
+                <span>📖</span> API Documentation
+            </a>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>System Information</h2>
+        <div class="info-card">
+            <table class="info-table">
+                <tr>
+                    <td><strong>Version:</strong></td>
+                    <td>beta-v0.0.2</td>
+                </tr>
+                <tr>
+                    <td><strong>API Endpoint:</strong></td>
+                    <td><code>/api</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Documentation:</strong></td>
+                    <td><a href="/docs" target="_blank">/docs</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Registration Status:</strong></td>
+                    <td>
+                        <span class="badge {% if stats.registration_enabled %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if stats.registration_enabled %}Enabled{% else %}Disabled{% endif %}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

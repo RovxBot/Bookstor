@@ -1,0 +1,147 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Settings - Bookstor Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Settings</h1>
+        <p>Manage application settings</p>
+    </div>
+
+    <div class="settings-section">
+        <h2>User Registration</h2>
+        <div class="setting-card">
+            <div class="setting-info">
+                <h3>Allow New User Registration</h3>
+                <p>When enabled, new users can register via the API. When disabled, only admins can create users.</p>
+            </div>
+            <div class="setting-control">
+                <label class="toggle-switch">
+                    <input 
+                        type="checkbox" 
+                        id="registrationToggle"
+                        {% if settings.get('registration_enabled') == 'true' %}checked{% endif %}
+                        onchange="toggleRegistration(this.checked)"
+                    >
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label" id="registrationStatus">
+                    {% if settings.get('registration_enabled') == 'true' %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h2>System Information</h2>
+        <div class="setting-card">
+            <table class="info-table">
+                <tr>
+                    <td><strong>API Version:</strong></td>
+                    <td>beta-v0.0.2</td>
+                </tr>
+                <tr>
+                    <td><strong>Database:</strong></td>
+                    <td>PostgreSQL</td>
+                </tr>
+                <tr>
+                    <td><strong>Authentication:</strong></td>
+                    <td>JWT (7 day expiry)</td>
+                </tr>
+                <tr>
+                    <td><strong>Google Books API:</strong></td>
+                    <td>
+                        <span class="badge badge-success">Configured</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h2>API Endpoints</h2>
+        <div class="setting-card">
+            <div class="endpoint-list">
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <code>/api/auth/register</code>
+                    <span class="endpoint-desc">User registration</span>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <code>/api/auth/login</code>
+                    <span class="endpoint-desc">User login</span>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <code>/api/books</code>
+                    <span class="endpoint-desc">List user's books</span>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <code>/api/books/isbn</code>
+                    <span class="endpoint-desc">Add book by ISBN</span>
+                </div>
+            </div>
+            <div class="endpoint-footer">
+                <a href="/docs" target="_blank" class="btn btn-secondary">
+                    View Full API Documentation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function toggleRegistration(enabled) {
+    try {
+        const formData = new FormData();
+        formData.append('enabled', enabled);
+        
+        const response = await fetch('/admin/api/settings/registration', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const statusLabel = document.getElementById('registrationStatus');
+            statusLabel.textContent = enabled ? 'Enabled' : 'Disabled';
+            
+            // Show success message
+            showNotification('Registration ' + (enabled ? 'enabled' : 'disabled') + ' successfully', 'success');
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.detail || 'Failed to update setting'));
+            // Revert toggle
+            document.getElementById('registrationToggle').checked = !enabled;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        // Revert toggle
+        document.getElementById('registrationToggle').checked = !enabled;
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}
+
