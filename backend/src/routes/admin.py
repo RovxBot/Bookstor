@@ -5,13 +5,18 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
 from datetime import timedelta
+from pathlib import Path
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from .. import models, schemas, auth
 from ..database import get_db
 from ..config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-templates = Jinja2Templates(directory="backend/src/templates")
+
+# Get templates directory relative to this file
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Cookie-based session management for admin UI
 serializer = URLSafeTimedSerializer(settings.secret_key)
