@@ -31,7 +31,14 @@ app.add_middleware(
 )
 
 # Mount static files for admin UI
-app.mount("/static", StaticFiles(directory="backend/src/static"), name="static")
+# Use relative path that works both in Docker and local development
+from pathlib import Path
+
+# Get the directory where this file is located
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Include routers
 app.include_router(auth.router, prefix="/api")
