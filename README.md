@@ -15,12 +15,20 @@ Personal library management system with barcode scanning, automatic series detec
 
 ## Features
 
+### Mobile App
 - Barcode scanning to add books instantly
 - Manage your book collection
 - Wishlist for books you want to read
 - Automatic series detection and collections
 - Dark mode support
 - Personal notes for each book
+
+### Admin Web Panel
+- User management (create, view, delete users)
+- Grant or revoke admin privileges
+- Toggle user registration on/off
+- System statistics dashboard
+- Secure cookie-based authentication
 
 ## Installation
 
@@ -145,6 +153,29 @@ CORS_ORIGINS=*
    - Public server: `https://your-domain.com/api`
 
 ## Usage
+
+### Admin Panel
+
+Access the admin panel at `http://localhost:8000/admin/login`
+
+**First Time Setup:**
+1. Create the first user via API (automatically becomes admin):
+   ```bash
+   curl -X POST http://localhost:8000/api/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"email": "admin@example.com", "password": "YourSecurePassword123"}'
+   ```
+
+2. Login to admin panel with your credentials
+
+**Admin Features:**
+- **Dashboard**: View system statistics and quick actions
+- **User Management**: Create users, manage admin privileges, delete users
+- **Settings**: Toggle registration, view API documentation
+
+See [backend/ADMIN_PANEL.md](backend/ADMIN_PANEL.md) for detailed admin panel documentation.
+
+### Mobile App
 
 1. **Register an account** - Create your account on first launch
 2. **Scan books** - Use the barcode scanner to add books

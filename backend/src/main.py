@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth, books
+from fastapi.staticfiles import StaticFiles
+from .routes import auth, books, admin
 from .database import engine, Base
 from .config import settings
 
@@ -29,9 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for admin UI
+app.mount("/static", StaticFiles(directory="backend/src/static"), name="static")
+
 # Include routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(books.router, prefix="/api")
+app.include_router(admin.router)
 
 
 @app.get("/")
@@ -40,7 +45,8 @@ def root():
     return {
         "message": "Welcome to Bookstor API",
         "version": "beta-v0.0.2",
-        "docs": "/docs"
+        "docs": "/docs",
+        "admin": "/admin/login"
     }
 
 
