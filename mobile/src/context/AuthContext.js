@@ -54,13 +54,37 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+
       // If 401, token was already cleared by interceptor
       if (error.response?.status === 401) {
         setUser(null);
       }
+
+      // Provide detailed error messages
+      let errorMessage = 'Login failed';
+
+      if (error.message === 'Network Error' || error.code === 'ECONNREFUSED') {
+        errorMessage = 'Cannot connect to server. Please check:\n• Server URL is correct\n• Server is running\n• You are on the same network';
+      } else if (error.response) {
+        // Server responded with error
+        if (error.response.status === 401) {
+          errorMessage = 'Incorrect email or password';
+        } else if (error.response.status === 404) {
+          errorMessage = 'Server endpoint not found. Check your server URL ends with /api';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later';
+        } else {
+          errorMessage = error.response?.data?.detail || `Error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage = 'No response from server. Please check:\n• Server is running\n• Network connection\n• Firewall settings';
+      }
+
       return {
         success: false,
-        error: error.response?.data?.detail || 'Login failed',
+        error: errorMessage,
       };
     }
   };

@@ -20,6 +20,7 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const { login } = useAuth();
@@ -53,6 +54,57 @@ export default function LoginScreen({ navigation }) {
       setRegistrationEnabled(false);
     } finally {
       setCheckingRegistration(false);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!serverUrl) {
+      Alert.alert('Error', 'Please enter a server URL');
+      return;
+    }
+
+    // Validate server URL format
+    if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+      Alert.alert('Error', 'Server URL must start with http:// or https://');
+      return;
+    }
+
+    setTestingConnection(true);
+
+    try {
+      await authAPI.setServerUrl(serverUrl);
+
+      // Try to fetch the root endpoint
+      const axios = require('axios');
+      const response = await axios.get(serverUrl.replace('/api', '/health'), {
+        timeout: 5000,
+      });
+
+      if (response.status === 200) {
+        Alert.alert(
+          'Connection Successful! ✅',
+          `Server is reachable and responding.\n\nYou can now log in with your credentials.`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Connection test error:', error);
+
+      let errorMessage = 'Connection failed';
+
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = 'Connection timeout. Server is not responding.\n\nCheck:\n• Server is running\n• URL is correct\n• Port number is included';
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused.\n\nCheck:\n• Server is running on port 8000\n• Firewall is not blocking the connection';
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Network error.\n\nCheck:\n• You are on the same network as the server\n• Server IP address is correct\n• WiFi is connected';
+      } else {
+        errorMessage = `Connection failed: ${error.message}`;
+      }
+
+      Alert.alert('Connection Test Failed ❌', errorMessage);
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -114,6 +166,18 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.hint}>
             Enter the URL of your Bookstor server (e.g., http://192.168.1.100:8000/api)
           </Text>
+
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={testConnection}
+            disabled={testingConnection || !serverUrl}
+          >
+            {testingConnection ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : (
+              <Text style={styles.testButtonText}>Test Connection</Text>
+            )}
+          </TouchableOpacity>
 
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -219,8 +283,22 @@ const createStyles = (theme) => StyleSheet.create({
   hint: {
     fontSize: 12,
     color: theme.colors.textSecondary,
-    marginBottom: 15,
+    marginBottom: 8,
     fontStyle: 'italic',
+  },
+  testButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  testButtonText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: theme.colors.primary,
