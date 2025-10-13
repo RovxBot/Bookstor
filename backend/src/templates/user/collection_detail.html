@@ -1,0 +1,410 @@
+{% extends "user/base.html" %}
+
+{% block title %}{{ series_name }} - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .collection-header {
+        background-color: var(--surface);
+        padding: 2rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .collection-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        letter-spacing: 0.3px;
+    }
+
+    .collection-author {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .collection-count {
+        font-size: 0.875rem;
+        color: var(--primary-colour);
+        font-weight: 600;
+    }
+
+    .books-list {
+        padding: 0 2rem 2rem 2rem;
+    }
+
+    .book-card {
+        display: flex;
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .book-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .book-thumbnail {
+        width: 60px;
+        height: 90px;
+        border-radius: 0.375rem;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .book-thumbnail-placeholder {
+        width: 60px;
+        height: 90px;
+        border-radius: 0.375rem;
+        background-color: var(--inactive);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .book-info {
+        flex: 1;
+        margin-left: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .book-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .book-authors {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+    }
+
+    .book-published {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .position-badge {
+        background-color: var(--primary-colour);
+        color: white;
+        border-radius: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        align-self: center;
+        margin-left: 1rem;
+    }
+
+    .missing-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid var(--border);
+    }
+
+    .missing-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0 2rem;
+    }
+
+    .missing-header ion-icon {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        margin-right: 0.5rem;
+    }
+
+    .missing-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: 0.3px;
+    }
+
+    .missing-subtitle {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-style: italic;
+        margin-bottom: 1rem;
+        padding: 0 2rem;
+    }
+
+    .missing-book-card {
+        display: flex;
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin: 0 2rem 1rem 2rem;
+        border: 1px dashed var(--border);
+    }
+
+    .missing-book-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .missing-book-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .missing-book-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        flex: 1;
+    }
+
+    .missing-position-badge {
+        background-color: var(--text-secondary);
+        color: white;
+        border-radius: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .missing-book-author {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .add-wishlist-btn {
+        background-color: var(--primary-colour);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-left: 0.625rem;
+        transition: all 0.2s;
+    }
+
+    .add-wishlist-btn:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    .add-wishlist-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .loading-container {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .loading-text {
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="collection-header">
+    <h1 class="collection-title">{{ series_name }}</h1>
+    {% if author %}
+    <p class="collection-author">by {{ author }}</p>
+    {% endif %}
+    <p class="collection-count">{{ books|length }} {{ 'book' if books|length == 1 else 'books' }}</p>
+</div>
+
+<div class="books-list">
+    {% for book in books %}
+    <a href="/app/book/{{ book.id }}" class="book-card">
+        {% if book.thumbnail %}
+        <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-thumbnail">
+        {% else %}
+        <div class="book-thumbnail-placeholder">
+            <ion-icon name="book"></ion-icon>
+        </div>
+        {% endif %}
+
+        <div class="book-info">
+            <div class="book-title">{{ book.title }}</div>
+            {% if book.authors %}
+            <div class="book-authors">{{ book.authors }}</div>
+            {% endif %}
+            {% if book.published_date %}
+            <div class="book-published">{{ book.published_date[:4] }}</div>
+            {% endif %}
+        </div>
+
+        {% if book.series_position %}
+        <div class="position-badge">#{{ book.series_position }}</div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+
+<div class="missing-section" id="missingSection" style="display: none;">
+    <div class="missing-header">
+        <ion-icon name="book-outline"></ion-icon>
+        <h2 class="missing-title">Missing Books (<span id="missingCount">0</span>)</h2>
+    </div>
+    <p class="missing-subtitle">Add these books to your wishlist to complete the series</p>
+    <div id="missingBooksList"></div>
+</div>
+
+<div class="loading-container" id="loadingMissing">
+    <div class="spinner"></div>
+    <p class="loading-text">Checking for missing books...</p>
+</div>
+
+<script>
+    async function loadMissingBooks() {
+        try {
+            const response = await fetch(`/api/books/collections/{{ series_name|urlencode }}/missing`, {
+                credentials: 'same-origin'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const missingBooks = data.missing_books || [];
+
+                document.getElementById('loadingMissing').style.display = 'none';
+
+                if (missingBooks.length > 0) {
+                    document.getElementById('missingSection').style.display = 'block';
+                    document.getElementById('missingCount').textContent = missingBooks.length;
+
+                    const listHtml = missingBooks.map(book => `
+                        <div class="missing-book-card">
+                            <div class="missing-book-info">
+                                <div class="missing-book-header">
+                                    <div class="missing-book-title">${book.title}</div>
+                                    ${book.position ? `<div class="missing-position-badge">#${book.position}</div>` : ''}
+                                </div>
+                                ${book.author ? `<div class="missing-book-author">${book.author}</div>` : ''}
+                            </div>
+                            <button class="add-wishlist-btn" onclick="addToWishlist('${book.title.replace(/'/g, "\\'")}', '${book.author ? book.author.replace(/'/g, "\\'") : ''}', this)">
+                                <ion-icon name="add-circle-outline"></ion-icon>
+                                Add to Wishlist
+                            </button>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('missingBooksList').innerHTML = listHtml;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load missing books:', error);
+            document.getElementById('loadingMissing').style.display = 'none';
+        }
+    }
+
+    async function addToWishlist(title, author, button) {
+        button.disabled = true;
+        button.innerHTML = '<div class="spinner" style="width: 1rem; height: 1rem;"></div>';
+
+        try {
+            // Search for the book
+            const searchResponse = await fetch(`/api/books/search?q=${encodeURIComponent(title + ' ' + author)}&max_results=5`, {
+                credentials: 'same-origin'
+            });
+
+            if (!searchResponse.ok) {
+                throw new Error('Search failed');
+            }
+
+            const searchResults = await searchResponse.json();
+
+            if (searchResults.length === 0) {
+                alert(`Could not find "${title}" in Google Books.`);
+                button.disabled = false;
+                button.innerHTML = '<ion-icon name="add-circle-outline"></ion-icon> Add to Wishlist';
+                return;
+            }
+
+            // Use the first result
+            const bookData = searchResults[0];
+
+            // Add to library as wishlist
+            const addResponse = await fetch('/api/books', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    ...bookData,
+                    authors: bookData.authors ? bookData.authors.join(', ') : author,
+                    categories: bookData.categories ? bookData.categories.join(', ') : null,
+                    is_wishlist: true,
+                    reading_status: 'want_to_read'
+                })
+            });
+
+            if (addResponse.ok) {
+                // Remove the card
+                button.closest('.missing-book-card').remove();
+
+                // Update count
+                const remaining = document.querySelectorAll('.missing-book-card').length;
+                document.getElementById('missingCount').textContent = remaining;
+
+                if (remaining === 0) {
+                    document.getElementById('missingSection').style.display = 'none';
+                }
+
+                showNotification(`"${title}" added to your wishlist!`, 'success');
+            } else {
+                throw new Error('Failed to add book');
+            }
+        } catch (error) {
+            console.error('Failed to add to wishlist:', error);
+            alert('Failed to add book to wishlist. Please try again.');
+            button.disabled = false;
+            button.innerHTML = '<ion-icon name="add-circle-outline"></ion-icon> Add to Wishlist';
+        }
+    }
+
+    function showNotification(message, type) {
+        // Simple notification - you can enhance this
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: ${type === 'success' ? 'var(--success-colour)' : 'var(--danger-colour)'};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Load missing books on page load
+    loadMissingBooks();
+</script>
+{% endblock %}
+

@@ -1,0 +1,255 @@
+{% extends "user/base.html" %}
+
+{% block title %}My Library - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-bar {
+        background-color: var(--surface);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* Filter buttons use theme.css styles */
+
+    .books-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem;
+        padding: 2rem;
+    }
+
+    .book-card {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: all 0.3s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .book-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .book-cover {
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+        background-color: var(--background);
+    }
+
+    .book-cover-placeholder {
+        width: 100%;
+        height: 280px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+    }
+
+    .book-info {
+        padding: 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .book-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .book-authors {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .book-status {
+        margin-top: auto;
+        padding: 0.375rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .status-want_to_read {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-currently_reading {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-read {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-text {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+
+    .stats-bar {
+        display: flex;
+        gap: 2rem;
+        padding: 1rem 2rem;
+        background-color: var(--surface);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .stat-value {
+        color: var(--primary-colour);
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>My Library</h1>
+    <p>{{ books|length }} books in your collection</p>
+</div>
+
+<div class="filter-bar">
+    <button class="filter-btn active" onclick="filterBooks('all')">All Books</button>
+    <button class="filter-btn" onclick="filterBooks('want_to_read')">Want to Read</button>
+    <button class="filter-btn" onclick="filterBooks('currently_reading')">Currently Reading</button>
+    <button class="filter-btn" onclick="filterBooks('read')">Read</button>
+</div>
+
+{% if books %}
+<div class="books-grid" id="booksGrid">
+    {% for book in books %}
+    <a href="/app/book/{{ book.id }}" class="book-card" data-status="{{ book.reading_status }}">
+        {% if book.thumbnail %}
+        <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+        {% else %}
+        <div class="book-cover-placeholder">📚</div>
+        {% endif %}
+        
+        <div class="book-info">
+            <div class="book-title">{{ book.title }}</div>
+            {% if book.authors %}
+            <div class="book-authors">{{ book.authors }}</div>
+            {% endif %}
+            
+            <div class="book-status status-{{ book.reading_status }}">
+                {% if book.reading_status == 'want_to_read' %}
+                    Want to Read
+                {% elif book.reading_status == 'currently_reading' %}
+                    Currently Reading
+                {% elif book.reading_status == 'read' %}
+                    Read
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📚</div>
+    <div class="empty-title">No books yet</div>
+    <div class="empty-text">Start building your library by searching for books or scanning barcodes</div>
+    <a href="/app/search" class="btn btn-primary">Search for Books</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentFilter = 'all';
+
+    function filterBooks(status) {
+        currentFilter = status;
+        
+        // Update button states
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Filter books
+        const books = document.querySelectorAll('.book-card');
+        let visibleCount = 0;
+        
+        books.forEach(book => {
+            if (status === 'all' || book.dataset.status === status) {
+                book.style.display = 'flex';
+                visibleCount++;
+            } else {
+                book.style.display = 'none';
+            }
+        });
+        
+        // Update count in header
+        const headerP = document.querySelector('.content-header p');
+        if (status === 'all') {
+            headerP.textContent = `${visibleCount} books in your collection`;
+        } else {
+            const statusLabels = {
+                'want_to_read': 'Want to Read',
+                'currently_reading': 'Currently Reading',
+                'read': 'Read'
+            };
+            headerP.textContent = `${visibleCount} books - ${statusLabels[status]}`;
+        }
+    }
+</script>
+{% endblock %}
+

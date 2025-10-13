@@ -72,9 +72,119 @@ async def get_current_admin_user(
 # HTML Pages
 # ============================================================================
 
+@router.get("/setup", response_class=HTMLResponse)
+async def admin_setup_page(request: Request, db: Session = Depends(get_db)):
+    """First-time setup page for creating the first admin user"""
+    # Check if any users exist
+    user_count = db.query(models.User).count()
+
+    # If users already exist, redirect to login
+    if user_count > 0:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    return templates.TemplateResponse("admin/setup.html", {"request": request})
+
+
+@router.post("/setup")
+async def admin_setup(
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Process first-time setup and create first admin user"""
+    # Check if any users exist
+    user_count = db.query(models.User).count()
+
+    # If users already exist, redirect to login
+    if user_count > 0:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    # Validate passwords match
+    if password != confirm_password:
+        return templates.TemplateResponse(
+            "admin/setup.html",
+            {
+                "request": {},
+                "error": "Passwords do not match",
+                "email": email
+            },
+            status_code=400
+        )
+
+    # Validate password strength
+    from ..utils.password_validator import validate_password
+    is_valid, error_message = validate_password(password)
+    if not is_valid:
+        return templates.TemplateResponse(
+            "admin/setup.html",
+            {
+                "request": {},
+                "error": error_message,
+                "email": email
+            },
+            status_code=400
+        )
+
+    # Check if email already exists (shouldn't happen, but just in case)
+    existing_user = db.query(models.User).filter(models.User.email == email).first()
+    if existing_user:
+        return templates.TemplateResponse(
+            "admin/setup.html",
+            {
+                "request": {},
+                "error": "Email already registered",
+                "email": email
+            },
+            status_code=400
+        )
+
+    # Create first admin user
+    hashed_password = auth.get_password_hash(password)
+    new_user = models.User(
+        email=email,
+        hashed_password=hashed_password,
+        is_admin=True
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    # Disable registration by default after first user
+    settings_entry = models.AppSettings(
+        key="registration_enabled",
+        value="false"
+    )
+    db.add(settings_entry)
+    db.commit()
+
+    # Create session token and log the user in
+    session_token = create_session_token(new_user.id)
+
+    # Redirect to dashboard with session cookie
+    response = RedirectResponse(url="/admin/dashboard", status_code=303)
+    response.set_cookie(
+        key=ADMIN_SESSION_COOKIE,
+        value=session_token,
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax"
+    )
+
+    return response
+
+
 @router.get("/login", response_class=HTMLResponse)
-async def admin_login_page(request: Request):
-    """Admin login page"""
+async def admin_login_page(request: Request, db: Session = Depends(get_db)):
+    """Admin login page - redirects to setup if no users exist"""
+    # Check if any users exist
+    user_count = db.query(models.User).count()
+
+    # If no users exist, redirect to setup page
+    if user_count == 0:
+        return RedirectResponse(url="/admin/setup", status_code=303)
+
     return templates.TemplateResponse("admin/login.html", {"request": request})
 
 

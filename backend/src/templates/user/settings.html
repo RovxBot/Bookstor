@@ -1,0 +1,345 @@
+{% extends "user/base.html" %}
+
+{% block title %}Settings - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .settings-section {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .section-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-info {
+        flex: 1;
+    }
+
+    .setting-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .setting-detail {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .theme-options {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .theme-option {
+        flex: 1;
+        min-width: 150px;
+        padding: 1.5rem;
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        background-color: var(--background);
+    }
+
+    .theme-option:hover {
+        border-color: var(--primary-colour);
+    }
+
+    .theme-option.active {
+        border-color: var(--primary-colour);
+        background-color: var(--surface);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .theme-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .theme-name {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .user-info-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .info-value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-admin {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-user {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Settings</h1>
+    <p>Manage your account and preferences</p>
+</div>
+
+<div class="settings-container">
+    <!-- Account Information -->
+    <div class="settings-section">
+        <h2 class="section-title">Account Information</h2>
+        <p class="section-description">Your account details and role</p>
+        
+        <div class="user-info-grid">
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Role</span>
+                <span class="info-value">
+                    {% if user.is_admin %}
+                    <span class="badge badge-admin">Administrator</span>
+                    {% else %}
+                    <span class="badge badge-user">User</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Member Since</span>
+                <span class="info-value">{{ user.created_at.strftime('%B %d, %Y') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="settings-section">
+        <h2 class="section-title">Appearance</h2>
+        <p class="section-description">Choose how Bookstor looks on your device</p>
+        
+        <div class="theme-options">
+            <div class="theme-option active" onclick="setTheme('light')">
+                <div class="theme-icon">☀️</div>
+                <div class="theme-name">Light Mode</div>
+            </div>
+            <div class="theme-option" onclick="setTheme('dark')">
+                <div class="theme-icon">🌙</div>
+                <div class="theme-name">Dark Mode</div>
+            </div>
+            <div class="theme-option" onclick="setTheme('auto')">
+                <div class="theme-icon">🔄</div>
+                <div class="theme-name">Auto</div>
+            </div>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+            Note: Dark mode will be fully implemented in a future update
+        </p>
+    </div>
+
+    <!-- Library Statistics -->
+    <div class="settings-section">
+        <h2 class="section-title">Library Statistics</h2>
+        <p class="section-description">Your reading progress at a glance</p>
+        
+        <div class="user-info-grid">
+            <div class="info-row">
+                <span class="info-label">Total Books</span>
+                <span class="info-value" id="totalBooks">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Books Read</span>
+                <span class="info-value" id="booksRead">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Currently Reading</span>
+                <span class="info-value" id="currentlyReading">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Wishlist Items</span>
+                <span class="info-value" id="wishlistCount">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Access -->
+    {% if user.is_admin %}
+    <div class="settings-section">
+        <h2 class="section-title">Administrator</h2>
+        <p class="section-description">Access administrative features</p>
+        
+        <a href="/admin/dashboard" class="btn btn-primary" style="width: 100%;">
+            🛡️ Open Admin Portal
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- About -->
+    <div class="settings-section">
+        <h2 class="section-title">About Bookstor</h2>
+        <p class="section-description">Version and information</p>
+        
+        <div class="user-info-grid">
+            <div class="info-row">
+                <span class="info-label">Version</span>
+                <span class="info-value">v0.0.2 (Beta)</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Platform</span>
+                <span class="info-value">Web Application</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load statistics
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/books');
+            const books = await response.json();
+            
+            const totalBooks = books.filter(b => !b.is_wishlist).length;
+            const booksRead = books.filter(b => b.reading_status === 'read' && !b.is_wishlist).length;
+            const currentlyReading = books.filter(b => b.reading_status === 'currently_reading' && !b.is_wishlist).length;
+            const wishlistCount = books.filter(b => b.is_wishlist).length;
+            
+            document.getElementById('totalBooks').textContent = totalBooks;
+            document.getElementById('booksRead').textContent = booksRead;
+            document.getElementById('currentlyReading').textContent = currentlyReading;
+            document.getElementById('wishlistCount').textContent = wishlistCount;
+        } catch (error) {
+            console.error('Failed to load statistics:', error);
+        }
+    }
+
+    function setTheme(theme) {
+        // Update active state
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        event.target.closest('.theme-option').classList.add('active');
+
+        // Store preference and apply theme
+        localStorage.setItem('themeMode', theme);
+
+        // Apply theme immediately
+        const html = document.documentElement;
+        if (theme === 'system') {
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            html.setAttribute('data-theme', systemTheme);
+        } else {
+            html.setAttribute('data-theme', theme);
+        }
+
+        // Show confirmation
+        showNotification(`Theme changed to ${theme} mode`);
+    }
+
+    function showNotification(message) {
+        // Create a simple toast notification
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--surface);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+
+    // Set active theme on page load
+    function initThemeSelector() {
+        const savedTheme = localStorage.getItem('themeMode') || 'light';
+        document.querySelectorAll('.theme-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+
+        const themeOptions = document.querySelectorAll('.theme-option');
+        if (savedTheme === 'light') themeOptions[0].classList.add('active');
+        else if (savedTheme === 'dark') themeOptions[1].classList.add('active');
+        else if (savedTheme === 'auto' || savedTheme === 'system') themeOptions[2].classList.add('active');
+    }
+
+    initThemeSelector();
+
+    // Load stats on page load
+    loadStats();
+</script>
+{% endblock %}
+

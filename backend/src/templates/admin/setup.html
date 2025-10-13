@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First Time Setup - Bookstor</title>
+    <link rel="stylesheet" href="/static/theme.css?v=2">
+    <link rel="stylesheet" href="/static/admin.css?v=4">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1><ion-icon name="library" style="font-size: 4rem;"></ion-icon></h1>
+                <h2>Welcome to Bookstor</h2>
+                <p>Create your admin account to get started</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-error">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/admin/setup" class="login-form" id="setupForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        autofocus
+                        placeholder="Enter your email"
+                        value="{{ email or '' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        placeholder="Create a strong password"
+                        minlength="8"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="confirm_password"
+                        name="confirm_password"
+                        required
+                        placeholder="Re-enter your password"
+                        minlength="8"
+                    >
+                </div>
+
+                <div class="password-requirements">
+                    <h4>
+                        <ion-icon name="lock-closed"></ion-icon>
+                        Password Requirements
+                    </h4>
+                    <ul>
+                        <li>At least 8 characters long</li>
+                        <li>Contains at least one uppercase letter</li>
+                        <li>Contains at least one lowercase letter</li>
+                        <li>Contains at least one number</li>
+                        <li>Contains at least one special character (!@#$%^&*)</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <ion-icon name="shield-checkmark"></ion-icon>
+                    Create Admin Account & Continue
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Bookstor v0.0.2 - Personal Library Management</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const passwordField = document.getElementById('password');
+        const confirmPasswordField = document.getElementById('confirm_password');
+        const passwordRequirements = document.querySelector('.password-requirements');
+        let isTyping = false;
+
+        // Show password requirements when password field is focused
+        passwordField.addEventListener('focus', function() {
+            if (!isTyping) {
+                passwordRequirements.classList.remove('hide');
+                passwordRequirements.classList.add('show');
+            }
+        });
+
+        // Hide password requirements when user starts typing
+        passwordField.addEventListener('input', function() {
+            if (!isTyping && this.value.length > 0) {
+                isTyping = true;
+                passwordRequirements.classList.remove('show');
+                passwordRequirements.classList.add('hide');
+                setTimeout(() => {
+                    passwordRequirements.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        // Reset typing flag when field is cleared
+        passwordField.addEventListener('blur', function() {
+            if (this.value.length === 0) {
+                isTyping = false;
+                passwordRequirements.classList.remove('show', 'hide');
+                passwordRequirements.style.display = 'none';
+            }
+        });
+
+        // Form validation
+        document.getElementById('setupForm').addEventListener('submit', function(e) {
+            const password = passwordField.value;
+            const confirmPassword = confirmPasswordField.value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match. Please try again.');
+                return false;
+            }
+
+            // Basic password validation
+            if (password.length < 8) {
+                e.preventDefault();
+                alert('Password must be at least 8 characters long.');
+                return false;
+            }
+
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+            if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
+                e.preventDefault();
+                alert('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+                return false;
+            }
+
+            return true;
+        });
+    </script>
+</body>
+</html>
+
