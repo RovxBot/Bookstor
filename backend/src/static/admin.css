@@ -26,6 +26,12 @@ body {
     gap: 2rem;
 }
 
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .nav-brand h1 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -39,6 +45,9 @@ body {
 }
 
 .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.5rem 1rem;
     text-decoration: none;
     colour: var(--text-secondary);
@@ -187,6 +196,10 @@ body {
 
 .stat-icon {
     font-size: 2.5rem;
+    color: var(--primary-colour);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stat-content h3 {

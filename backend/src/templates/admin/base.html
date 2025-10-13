@@ -15,17 +15,33 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">
-                <h1>📚 Bookstor Admin</h1>
+                <ion-icon name="library" style="font-size: 1.5rem;"></ion-icon>
+                <h1>Bookstor Admin</h1>
             </div>
             <div class="nav-menu">
-                <a href="/admin/dashboard" class="nav-link {% if request.url.path == '/admin/dashboard' %}active{% endif %}">Dashboard</a>
-                <a href="/admin/users" class="nav-link {% if request.url.path == '/admin/users' %}active{% endif %}">Users</a>
-                <a href="/admin/settings" class="nav-link {% if request.url.path == '/admin/settings' %}active{% endif %}">Settings</a>
-                <a href="/docs" class="nav-link" target="_blank">API Docs</a>
+                <a href="/admin/dashboard" class="nav-link {% if request.url.path == '/admin/dashboard' %}active{% endif %}">
+                    <ion-icon name="grid-outline"></ion-icon>
+                    Dashboard
+                </a>
+                <a href="/admin/users" class="nav-link {% if request.url.path == '/admin/users' %}active{% endif %}">
+                    <ion-icon name="people-outline"></ion-icon>
+                    Users
+                </a>
+                <a href="/admin/settings" class="nav-link {% if request.url.path == '/admin/settings' %}active{% endif %}">
+                    <ion-icon name="settings-outline"></ion-icon>
+                    Settings
+                </a>
+                <a href="/docs" class="nav-link" target="_blank">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    API Docs
+                </a>
             </div>
             <div class="nav-user">
                 <span class="user-email">{{ current_user.email }}</span>
-                <a href="/admin/logout" class="btn btn-secondary btn-sm">Logout</a>
+                <a href="/admin/logout" class="btn btn-secondary btn-sm">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    Logout
+                </a>
             </div>
         </div>
     </nav>
