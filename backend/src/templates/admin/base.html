@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Bookstor Admin{% endblock %}</title>
-    <link rel="stylesheet" href="/static/admin.css">
+    <link rel="stylesheet" href="/static/theme.css?v=2">
+    <link rel="stylesheet" href="/static/admin.css?v=4">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -36,6 +39,22 @@
         <p>Bookstor Admin Panel &copy; 2025</p>
     </footer>
 
+    <script>
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('themeMode') || 'light';
+            const html = document.documentElement;
+
+            if (savedTheme === 'system') {
+                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                html.setAttribute('data-theme', systemTheme);
+            } else {
+                html.setAttribute('data-theme', savedTheme);
+            }
+        }
+
+        initTheme();
+    </script>
     <script src="/static/admin.js"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

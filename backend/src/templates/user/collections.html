@@ -1,0 +1,147 @@
+{% extends "user/base.html" %}
+
+{% block title %}Collections - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .collections-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        padding: 2rem;
+    }
+
+    .collection-card {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: all 0.3s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .collection-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .collection-covers {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        height: 200px;
+        background-color: var(--background);
+    }
+
+    .collection-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .collection-cover-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .collection-info {
+        padding: 1.5rem;
+    }
+
+    .collection-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .collection-count {
+        font-size: 0.875rem;
+        color: var(--primary-colour);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .collection-author {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-text {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Collections</h1>
+    <p>{{ collections|length }} {% if collections|length == 1 %}series{% else %}series{% endif %} in your library</p>
+</div>
+
+{% if collections %}
+<div class="collections-grid">
+    {% for series_name, books in collections.items() %}
+    <div class="collection-card">
+        <div class="collection-covers">
+            {% for book in books[:4] %}
+                {% if book.thumbnail %}
+                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="collection-cover">
+                {% else %}
+                <div class="collection-cover-placeholder">📚</div>
+                {% endif %}
+            {% endfor %}
+            
+            {% if books|length < 4 %}
+                {% for i in range(4 - books|length) %}
+                <div class="collection-cover-placeholder">📚</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        
+        <div class="collection-info">
+            <div class="collection-name">{{ series_name }}</div>
+            <div class="collection-count">
+                {{ books|length }} {% if books|length == 1 %}book{% else %}books{% endif %}
+            </div>
+            {% if books[0].authors %}
+            <div class="collection-author">by {{ books[0].authors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📚</div>
+    <div class="empty-title">No collections yet</div>
+    <div class="empty-text">Add books from a series to see them grouped here</div>
+    <a href="/app/search" class="btn btn-primary">Search for Books</a>
+</div>
+{% endif %}
+{% endblock %}
+

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from .routes import auth, books, admin
+from .routes import auth, books, admin, user_portal
 from .database import engine, Base
 from .config import settings
 
@@ -44,6 +44,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(auth.router, prefix="/api")
 app.include_router(books.router, prefix="/api")
 app.include_router(admin.router)
+app.include_router(user_portal.router)
 
 
 @app.get("/")
@@ -53,6 +54,7 @@ def root():
         "message": "Welcome to Bookstor API",
         "version": "beta-v0.0.2",
         "docs": "/docs",
+        "app": "/app/login",
         "admin": "/admin/login"
     }
 

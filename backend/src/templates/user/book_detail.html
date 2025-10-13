@@ -1,0 +1,406 @@
+{% extends "user/base.html" %}
+
+{% block title %}{{ book.title }} - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .book-hero {
+        position: relative;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 3rem 2rem;
+        color: white;
+    }
+
+    .book-hero-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    .book-cover-large {
+        width: 200px;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .book-cover-placeholder-large {
+        width: 200px;
+        height: 300px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+    }
+
+    .book-hero-info {
+        flex: 1;
+    }
+
+    .book-hero-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .book-hero-authors {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        margin-bottom: 1rem;
+    }
+
+    .book-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        opacity: 0.9;
+    }
+
+    .book-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .book-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .book-detail-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .detail-section {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+    }
+
+    .reading-status-selector {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .status-btn {
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--border);
+        background-color: var(--surface);
+        color: var(--text-primary);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .status-btn:hover {
+        border-color: var(--primary-colour);
+    }
+
+    .status-btn.active {
+        background-color: var(--primary-colour);
+        color: white;
+        border-color: var(--primary-colour);
+    }
+
+    .notes-textarea {
+        width: 100%;
+        min-height: 150px;
+        padding: 1rem;
+        border: 2px solid var(--border);
+        border-radius: 0.5rem;
+        font-family: inherit;
+        font-size: 0.95rem;
+        resize: vertical;
+        background-color: var(--background);
+        color: var(--text-primary);
+    }
+
+    .notes-textarea:focus {
+        outline: none;
+        border-color: var(--primary-colour);
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .wishlist-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--border);
+        background-color: var(--surface);
+        color: var(--text-primary);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .wishlist-toggle.active {
+        background-color: #fef3c7;
+        border-color: #fbbf24;
+        color: #92400e;
+    }
+
+    .wishlist-toggle:hover {
+        border-color: #fbbf24;
+    }
+
+    .delete-btn {
+        margin-left: auto;
+    }
+
+    .book-description {
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .book-categories {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .category-badge {
+        padding: 0.375rem 0.75rem;
+        background-color: var(--background);
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="book-hero">
+    <div class="book-hero-content">
+        {% if book.thumbnail %}
+        <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover-large">
+        {% else %}
+        <div class="book-cover-placeholder-large">📚</div>
+        {% endif %}
+        
+        <div class="book-hero-info">
+            <h1 class="book-hero-title">{{ book.title }}</h1>
+            {% if book.authors %}
+            <div class="book-hero-authors">by {{ book.authors }}</div>
+            {% endif %}
+            
+            <div class="book-meta">
+                {% if book.published_date %}
+                <div class="book-meta-item">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    {{ book.published_date[:4] }}
+                </div>
+                {% endif %}
+                {% if book.page_count %}
+                <div class="book-meta-item">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    {{ book.page_count }} pages
+                </div>
+                {% endif %}
+                {% if book.publisher %}
+                <div class="book-meta-item">
+                    <ion-icon name="business-outline"></ion-icon>
+                    {{ book.publisher }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="book-detail-content">
+    <!-- Reading Status -->
+    <div class="detail-section">
+        <h2 class="section-title">Reading Status</h2>
+        <form method="POST" action="/api/books/{{ book.id }}" id="statusForm">
+            <div class="reading-status-selector">
+                <button type="button" class="status-btn {% if book.reading_status == 'want_to_read' %}active{% endif %}" 
+                        onclick="updateStatus('want_to_read')">
+                    Want to Read
+                </button>
+                <button type="button" class="status-btn {% if book.reading_status == 'currently_reading' %}active{% endif %}" 
+                        onclick="updateStatus('currently_reading')">
+                    Currently Reading
+                </button>
+                <button type="button" class="status-btn {% if book.reading_status == 'read' %}active{% endif %}" 
+                        onclick="updateStatus('read')">
+                    Read
+                </button>
+            </div>
+        </form>
+        
+        <div style="margin-top: 1rem;">
+            <button type="button" class="wishlist-toggle {% if book.is_wishlist %}active{% endif %}"
+                    onclick="toggleWishlist()" id="wishlistBtn">
+                <span id="wishlistIcon">
+                    <ion-icon name="{% if book.is_wishlist %}star{% else %}star-outline{% endif %}"></ion-icon>
+                </span>
+                <span id="wishlistText">{% if book.is_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="detail-section">
+        <h2 class="section-title">My Notes</h2>
+        <form method="POST" action="/api/books/{{ book.id }}" id="notesForm">
+            <textarea class="notes-textarea" name="notes" id="notes" 
+                      placeholder="Add your personal notes about this book...">{{ book.notes or '' }}</textarea>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Description -->
+    {% if book.description %}
+    <div class="detail-section">
+        <h2 class="section-title">Description</h2>
+        <div class="book-description">{{ book.description }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Categories -->
+    {% if book.categories %}
+    <div class="detail-section">
+        <h2 class="section-title">Categories</h2>
+        <div class="book-categories">
+            {% for category in book.categories.split(',') %}
+            <span class="category-badge">{{ category.strip() }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Delete -->
+    <div class="detail-section">
+        <h2 class="section-title">Danger Zone</h2>
+        <button type="button" class="btn btn-danger" onclick="deleteBook()">Delete Book</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function updateStatus(status) {
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({reading_status: status})
+            });
+            
+            if (response.ok) {
+                // Update UI
+                document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+                showNotification('Reading status updated!', 'success');
+            }
+        } catch (error) {
+            showNotification('Failed to update status', 'error');
+        }
+    }
+
+    async function toggleWishlist() {
+        const isWishlist = {{ 'true' if book.is_wishlist else 'false' }};
+        
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({is_wishlist: !isWishlist})
+            });
+            
+            if (response.ok) {
+                const btn = document.getElementById('wishlistBtn');
+                const icon = document.getElementById('wishlistIcon');
+                const text = document.getElementById('wishlistText');
+                
+                if (isWishlist) {
+                    btn.classList.remove('active');
+                    icon.innerHTML = '<ion-icon name="star-outline"></ion-icon>';
+                    text.textContent = 'Add to Wishlist';
+                } else {
+                    btn.classList.add('active');
+                    icon.innerHTML = '<ion-icon name="star"></ion-icon>';
+                    text.textContent = 'In Wishlist';
+                }
+                
+                showNotification('Wishlist updated!', 'success');
+                location.reload();
+            }
+        } catch (error) {
+            showNotification('Failed to update wishlist', 'error');
+        }
+    }
+
+    async function saveNotes() {
+        const notes = document.getElementById('notes').value;
+        
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({notes: notes})
+            });
+            
+            if (response.ok) {
+                showNotification('Notes saved!', 'success');
+            }
+        } catch (error) {
+            showNotification('Failed to save notes', 'error');
+        }
+    }
+
+    async function deleteBook() {
+        if (!confirm('Are you sure you want to delete this book from your library?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                showNotification('Book deleted!', 'success');
+                setTimeout(() => window.location.href = '/app/library', 1000);
+            }
+        } catch (error) {
+            showNotification('Failed to delete book', 'error');
+        }
+    }
+
+    function showNotification(message, type) {
+        // Simple notification - you can enhance this
+        alert(message);
+    }
+</script>
+{% endblock %}
+

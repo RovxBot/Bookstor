@@ -1,0 +1,389 @@
+{% extends "user/base.html" %}
+
+{% block title %}Search & Add Books - Bookstor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .search-box {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+    }
+
+    .search-form {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        background-color: var(--background);
+        color: var(--text-primary);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-colour);
+    }
+
+    .isbn-input {
+        width: 200px;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border);
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        background-color: var(--background);
+        color: var(--text-primary);
+    }
+
+    .isbn-input:focus {
+        outline: none;
+        border-color: var(--primary-colour);
+    }
+
+    .search-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .result-card {
+        background-color: var(--surface);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: all 0.3s;
+    }
+
+    .result-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .result-cover {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        background-color: var(--background);
+    }
+
+    .result-cover-placeholder {
+        width: 100%;
+        height: 300px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+    }
+
+    .result-info {
+        padding: 1.5rem;
+    }
+
+    .result-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .result-authors {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+
+    .result-meta {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .result-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .spinner {
+        border: 3px solid var(--border);
+        border-top: 3px solid var(--primary-colour);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-results {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .tab {
+        padding: 0.75rem 1.5rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+
+    .tab:hover {
+        color: var(--text-primary);
+    }
+
+    .tab.active {
+        color: var(--primary-colour);
+        border-bottom-color: var(--primary-colour);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>Search & Add Books</h1>
+    <p>Search for books to add to your library or wishlist</p>
+</div>
+
+<div class="search-container">
+    <div class="search-box">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('search')">Search by Title/Author</button>
+            <button class="tab" onclick="switchTab('isbn')">Add by ISBN</button>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="searchTab" class="tab-content active">
+            <form class="search-form" onsubmit="searchBooks(event)">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchQuery" 
+                    placeholder="Search by title, author, or keyword..."
+                    required
+                >
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+
+        <!-- ISBN Tab -->
+        <div id="isbnTab" class="tab-content">
+            <form class="search-form" onsubmit="addByISBN(event)">
+                <input 
+                    type="text" 
+                    class="isbn-input" 
+                    id="isbnInput" 
+                    placeholder="Enter ISBN..."
+                    pattern="[0-9]{10,13}"
+                    required
+                >
+                <button type="submit" class="btn btn-primary">Add Book</button>
+                <button type="button" class="btn btn-secondary" onclick="addToLibrary()">Add to Library</button>
+                <button type="button" class="btn btn-secondary" onclick="addToWishlist()">Add to Wishlist</button>
+            </form>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">
+                Enter a 10 or 13 digit ISBN number
+            </p>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Searching...</p>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="search-results"></div>
+    
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-results" style="display: none;">
+        <p>No results found. Try a different search term.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentTab = 'search';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        // Update tab buttons
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tab + 'Tab').classList.add('active');
+        
+        // Clear results
+        document.getElementById('results').innerHTML = '';
+        document.getElementById('emptyState').style.display = 'none';
+    }
+
+    async function searchBooks(event) {
+        event.preventDefault();
+        
+        const query = document.getElementById('searchQuery').value;
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const emptyState = document.getElementById('emptyState');
+        
+        loading.style.display = 'block';
+        results.innerHTML = '';
+        emptyState.style.display = 'none';
+        
+        try {
+            const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
+            const books = await response.json();
+            
+            loading.style.display = 'none';
+            
+            if (books.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            results.innerHTML = books.map(book => createBookCard(book)).join('');
+        } catch (error) {
+            loading.style.display = 'none';
+            alert('Search failed. Please try again.');
+        }
+    }
+
+    function createBookCard(book) {
+        const thumbnail = book.thumbnail || '';
+        const authors = book.authors ? book.authors.join(', ') : 'Unknown Author';
+        const year = book.published_date ? book.published_date.substring(0, 4) : '';
+        const pages = book.page_count ? `${book.page_count} pages` : '';
+        
+        return `
+            <div class="result-card">
+                ${thumbnail ? 
+                    `<img src="${thumbnail}" alt="${book.title}" class="result-cover">` :
+                    '<div class="result-cover-placeholder">📚</div>'
+                }
+                <div class="result-info">
+                    <div class="result-title">${book.title}</div>
+                    <div class="result-authors">${authors}</div>
+                    <div class="result-meta">${year} ${pages ? '• ' + pages : ''}</div>
+                    <div class="result-actions">
+                        <button class="btn btn-primary btn-sm" onclick='addBookToLibrary(${JSON.stringify(book)})'>
+                            Add to Library
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick='addBookToWishlist(${JSON.stringify(book)})'>
+                            Wishlist
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function addBookToLibrary(book) {
+        await addBook(book, 'want_to_read', false);
+    }
+
+    async function addBookToWishlist(book) {
+        await addBook(book, 'wishlist', true);
+    }
+
+    async function addBook(book, readingStatus, isWishlist) {
+        try {
+            const bookData = {
+                title: book.title,
+                authors: book.authors ? book.authors.join(', ') : null,
+                description: book.description,
+                publisher: book.publisher,
+                published_date: book.published_date,
+                page_count: book.page_count,
+                categories: book.categories ? book.categories.join(', ') : null,
+                thumbnail: book.thumbnail,
+                isbn: book.isbn,
+                google_books_id: book.google_books_id,
+                reading_status: readingStatus,
+                is_wishlist: isWishlist
+            };
+            
+            const response = await fetch('/api/books', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(bookData)
+            });
+            
+            if (response.ok) {
+                const addedBook = await response.json();
+                alert(`"${book.title}" has been added to your ${isWishlist ? 'wishlist' : 'library'}!`);
+                window.location.href = `/app/book/${addedBook.id}`;
+            } else {
+                alert('Failed to add book. It may already be in your library.');
+            }
+        } catch (error) {
+            alert('Failed to add book. Please try again.');
+        }
+    }
+
+    async function addByISBN(event) {
+        event.preventDefault();
+        const isbn = document.getElementById('isbnInput').value;
+        
+        // This would need backend support
+        alert('ISBN lookup will be implemented with backend support');
+    }
+</script>
+{% endblock %}
+
