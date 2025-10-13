@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Bookstor</title>
-    <link rel="stylesheet" href="/static/admin.css">
+    <link rel="stylesheet" href="/static/admin.css?v=2">
 </head>
 <body class="login-page">
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <h1>📚 Bookstor</h1>
-                <h2>Admin Login</h2>
+                <h1>📚</h1>
+                <h2>Welcome Back</h2>
+                <p>Sign in to access your Bookstor admin panel</p>
             </div>
 
             {% if error %}
@@ -22,30 +23,30 @@
 
             <form method="POST" action="/admin/login" class="login-form">
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
-                        required 
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
                         autofocus
-                        placeholder="admin@example.com"
+                        placeholder="Enter your email"
                     >
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
                         required
                         placeholder="Enter your password"
                     >
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block">
-                    Login
+                    Sign In
                 </button>
             </form>
 
