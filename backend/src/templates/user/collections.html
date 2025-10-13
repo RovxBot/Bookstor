@@ -106,30 +106,34 @@
 {% if collections %}
 <div class="collections-grid">
     {% for series_name, books in collections.items() %}
-    <div class="collection-card">
+    <div class="collection-card" onclick="window.location.href='/app/collection/{{ series_name|urlencode }}'">
         <div class="collection-covers">
             {% for book in books[:4] %}
                 {% if book.thumbnail %}
                 <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="collection-cover">
                 {% else %}
-                <div class="collection-cover-placeholder">📚</div>
+                <div class="collection-cover-placeholder">
+                    <ion-icon name="albums"></ion-icon>
+                </div>
                 {% endif %}
             {% endfor %}
-            
+
             {% if books|length < 4 %}
                 {% for i in range(4 - books|length) %}
-                <div class="collection-cover-placeholder">📚</div>
+                <div class="collection-cover-placeholder">
+                    <ion-icon name="albums"></ion-icon>
+                </div>
                 {% endfor %}
             {% endif %}
         </div>
-        
+
         <div class="collection-info">
             <div class="collection-name">{{ series_name }}</div>
             <div class="collection-count">
                 {{ books|length }} {% if books|length == 1 %}book{% else %}books{% endif %}
             </div>
             {% if books[0].authors %}
-            <div class="collection-author">by {{ books[0].authors }}</div>
+            <div class="collection-author">by {{ books[0].authors.split(',')[0].strip() }}</div>
             {% endif %}
         </div>
     </div>
@@ -137,7 +141,9 @@
 </div>
 {% else %}
 <div class="empty-state">
-    <div class="empty-icon">📚</div>
+    <div class="empty-icon">
+        <ion-icon name="albums"></ion-icon>
+    </div>
     <div class="empty-title">No collections yet</div>
     <div class="empty-text">Add books from a series to see them grouped here</div>
     <a href="/app/search" class="btn btn-primary">Search for Books</a>

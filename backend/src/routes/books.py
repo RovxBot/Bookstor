@@ -9,11 +9,12 @@ from ..services.openlibrary import openlibrary_service
 router = APIRouter(prefix="/books", tags=["books"])
 
 
+@router.get("/search", response_model=List[schemas.GoogleBookInfo])
 @router.get("/search/", response_model=List[schemas.GoogleBookInfo])
 async def search_books(
     q: str = Query(..., description="Search query (title, author, etc.)"),
     max_results: int = Query(10, ge=1, le=40, description="Maximum number of results"),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: models.User = Depends(auth.get_current_user_flexible)
 ):
     """Search for books using Google Books API"""
     results = await google_books_service.search_by_title(q, max_results)
@@ -23,7 +24,7 @@ async def search_books(
 @router.post("/isbn/", response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
 async def add_book_by_isbn(
     isbn_lookup: schemas.ISBNLookup,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Add a book to library by scanning ISBN"""
@@ -78,7 +79,7 @@ async def add_book_by_isbn(
 @router.post("/", response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
 def add_book_manually(
     book: schemas.BookCreate,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Manually add a book (useful for wishlist items without ISBN)"""
@@ -96,7 +97,7 @@ def add_book_manually(
 
 @router.get("/collections/")
 def get_collections(
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Get book collections grouped by series"""
@@ -133,7 +134,7 @@ def get_collections(
 @router.get("/collections/{series_name}/missing")
 async def get_missing_books(
     series_name: str,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Get missing books from a series that could be added to wishlist"""
@@ -172,7 +173,7 @@ async def get_missing_books(
 def get_books(
     reading_status: Optional[str] = Query(None, description="Filter by reading status"),
     is_wishlist: Optional[bool] = Query(None, description="Filter wishlist items"),
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Get all books for the current user with optional filters"""
@@ -191,7 +192,7 @@ def get_books(
 @router.get("/{book_id}", response_model=schemas.Book)
 def get_book(
     book_id: int,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Get a specific book by ID"""
@@ -213,7 +214,7 @@ def get_book(
 def update_book(
     book_id: int,
     book_update: schemas.BookUpdate,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Update book details (reading status, notes, etc.)"""
@@ -239,10 +240,59 @@ def update_book(
     return db_book
 
 
+@router.post("/{book_id}/refresh-metadata", response_model=schemas.Book)
+async def refresh_book_metadata(
+    book_id: int,
+    current_user: models.User = Depends(auth.get_current_user_flexible),
+    db: Session = Depends(get_db)
+):
+    """Refresh book metadata from Google Books and Open Library APIs"""
+    db_book = db.query(models.Book).filter(
+        models.Book.id == book_id,
+        models.Book.user_id == current_user.id
+    ).first()
+
+    if not db_book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book not found"
+        )
+
+    # Try to fetch updated info from Google Books using ISBN or title
+    book_info = None
+    if db_book.isbn:
+        book_info = await google_books_service.search_by_isbn(db_book.isbn)
+
+    if not book_info and db_book.title:
+        # Try searching by title and author
+        search_query = db_book.title
+        if db_book.authors:
+            search_query += f" {db_book.authors.split(',')[0]}"
+        results = await google_books_service.search_by_title(search_query, max_results=1)
+        if results:
+            book_info = results[0]
+
+    if book_info:
+        # Update fields that might have changed, but preserve user data
+        if book_info.series_name:
+            db_book.series_name = book_info.series_name
+        if book_info.series_position:
+            db_book.series_position = book_info.series_position
+        if book_info.thumbnail and not db_book.thumbnail:
+            db_book.thumbnail = book_info.thumbnail
+        if book_info.description and not db_book.description:
+            db_book.description = book_info.description
+
+        db.commit()
+        db.refresh(db_book)
+
+    return db_book
+
+
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_book(
     book_id: int,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
     """Delete a book from library"""
@@ -250,15 +300,15 @@ def delete_book(
         models.Book.id == book_id,
         models.Book.user_id == current_user.id
     ).first()
-    
+
     if not db_book:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Book not found"
         )
-    
+
     db.delete(db_book)
     db.commit()
-    
+
     return None
 

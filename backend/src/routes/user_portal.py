@@ -166,18 +166,45 @@ async def collections_page(request: Request, db: Session = Depends(get_db)):
         models.Book.user_id == user.id,
         models.Book.series_name.isnot(None)
     ).order_by(models.Book.series_name, models.Book.series_position).all()
-    
+
     # Group by series
     collections = {}
     for book in books_with_series:
         if book.series_name not in collections:
             collections[book.series_name] = []
         collections[book.series_name].append(book)
-    
+
     return templates.TemplateResponse("user/collections.html", {
         "request": request,
         "user": user,
         "collections": collections
+    })
+
+
+@router.get("/app/collection/{series_name}", response_class=HTMLResponse)
+async def collection_detail_page(request: Request, series_name: str, db: Session = Depends(get_db)):
+    """Collection detail page - shows books in a series and missing books"""
+    user = require_user(request, db)
+
+    # Get books in this series
+    books = db.query(models.Book).filter(
+        models.Book.user_id == user.id,
+        models.Book.series_name == series_name
+    ).order_by(models.Book.series_position, models.Book.title).all()
+
+    if not books:
+        # Series not found, redirect to collections
+        return RedirectResponse(url="/app/collections", status_code=303)
+
+    # Get author from first book
+    author = books[0].authors.split(',')[0].strip() if books and books[0].authors else None
+
+    return templates.TemplateResponse("user/collection_detail.html", {
+        "request": request,
+        "user": user,
+        "series_name": series_name,
+        "author": author,
+        "books": books
     })
 
 

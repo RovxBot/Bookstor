@@ -205,6 +205,13 @@ class GoogleBooksService:
                 for item in data.get("items", []):
                     volume_info = item.get("volumeInfo", {})
 
+                    # Extract ISBN if available
+                    isbn = None
+                    for identifier in volume_info.get("industryIdentifiers", []):
+                        if identifier.get("type") in ["ISBN_13", "ISBN_10"]:
+                            isbn = identifier.get("identifier")
+                            break
+
                     # Extract thumbnail (prefer larger image)
                     thumbnail = None
                     if "imageLinks" in volume_info:
@@ -213,18 +220,22 @@ class GoogleBooksService:
                             volume_info["imageLinks"].get("smallThumbnail")
                         )
 
-                    # Extract ISBN if available
-                    isbn = None
-                    for identifier in volume_info.get("industryIdentifiers", []):
-                        if identifier.get("type") in ["ISBN_13", "ISBN_10"]:
-                            isbn = identifier.get("identifier")
-                            break
+                    # If no thumbnail from Google Books and we have ISBN, try Open Library
+                    if not thumbnail and isbn:
+                        thumbnail = await openlibrary_service.get_cover_by_isbn(isbn, size="L")
 
                     # Extract series information
                     title = volume_info.get("title", "Unknown Title")
                     subtitle = volume_info.get("subtitle")
                     categories = volume_info.get("categories")
                     series_name, series_position = self._extract_series_info(title, subtitle, categories)
+
+                    # If no series found and we have ISBN, try Open Library as fallback
+                    if not series_name and isbn:
+                        ol_series, ol_position = await openlibrary_service.get_series_info_by_isbn(isbn)
+                        if ol_series:
+                            series_name = ol_series
+                            series_position = ol_position or series_position
 
                     book_info = GoogleBookInfo(
                         title=title,

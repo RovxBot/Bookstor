@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from .config import settings
@@ -11,6 +11,7 @@ from . import models, schemas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -58,18 +59,55 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     token = credentials.credentials
     email = decode_token(token)
-    
+
     if email is None:
         raise credentials_exception
-    
+
     user = db.query(models.User).filter(models.User.email == email).first()
     if user is None:
         raise credentials_exception
-    
+
     return user
+
+
+async def get_current_user_flexible(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db: Session = Depends(get_db)
+) -> models.User:
+    """Get the current authenticated user - supports both Bearer token and session cookies"""
+
+    # Try Bearer token first
+    if credentials:
+        token = credentials.credentials
+        email = decode_token(token)
+
+        if email:
+            user = db.query(models.User).filter(models.User.email == email).first()
+            if user:
+                return user
+
+    # Try session cookie
+    session_token = request.cookies.get("session_token")
+    user_id = request.cookies.get("user_id")
+
+    if session_token and user_id:
+        try:
+            user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+            if user:
+                return user
+        except:
+            pass
+
+    # No valid authentication found
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[models.User]:

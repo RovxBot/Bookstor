@@ -288,20 +288,30 @@
         emptyState.style.display = 'none';
         
         try {
-            const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
+            const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`, {
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Search error:', errorData);
+                throw new Error(`Search failed: ${JSON.stringify(errorData)}`);
+            }
+
             const books = await response.json();
-            
+
             loading.style.display = 'none';
-            
+
             if (books.length === 0) {
                 emptyState.style.display = 'block';
                 return;
             }
-            
+
             results.innerHTML = books.map(book => createBookCard(book)).join('');
         } catch (error) {
             loading.style.display = 'none';
-            alert('Search failed. Please try again.');
+            console.error('Search error:', error);
+            alert('Search failed. Please try again. Check console for details.');
         }
     }
 
@@ -362,6 +372,7 @@
             const response = await fetch('/api/books', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
                 body: JSON.stringify(bookData)
             });
             

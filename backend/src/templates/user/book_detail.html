@@ -192,6 +192,34 @@
         font-size: 0.875rem;
         color: var(--text-secondary);
     }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background-color: var(--surface);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-colour);
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -240,16 +268,16 @@
         <h2 class="section-title">Reading Status</h2>
         <form method="POST" action="/api/books/{{ book.id }}" id="statusForm">
             <div class="reading-status-selector">
-                <button type="button" class="status-btn {% if book.reading_status == 'want_to_read' %}active{% endif %}" 
-                        onclick="updateStatus('want_to_read')">
+                <button type="button" class="status-btn {% if book.reading_status == 'want_to_read' %}active{% endif %}"
+                        onclick="updateStatus('want_to_read', this)">
                     Want to Read
                 </button>
-                <button type="button" class="status-btn {% if book.reading_status == 'currently_reading' %}active{% endif %}" 
-                        onclick="updateStatus('currently_reading')">
+                <button type="button" class="status-btn {% if book.reading_status == 'currently_reading' %}active{% endif %}"
+                        onclick="updateStatus('currently_reading', this)">
                     Currently Reading
                 </button>
-                <button type="button" class="status-btn {% if book.reading_status == 'read' %}active{% endif %}" 
-                        onclick="updateStatus('read')">
+                <button type="button" class="status-btn {% if book.reading_status == 'read' %}active{% endif %}"
+                        onclick="updateStatus('read', this)">
                     Read
                 </button>
             </div>
@@ -286,6 +314,34 @@
     </div>
     {% endif %}
 
+    <!-- Series Information -->
+    <div class="detail-section">
+        <h2 class="section-title">Series Information</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+            Series information is automatically fetched from Google Books and Open Library when available.
+            You can also manually edit it below.
+        </p>
+        <form method="POST" id="seriesForm">
+            <div class="form-group">
+                <label for="series_name">Series Name</label>
+                <input type="text" class="form-input" name="series_name" id="series_name"
+                       value="{{ book.series_name or '' }}" placeholder="e.g., The Vampire Chronicles">
+            </div>
+            <div class="form-group">
+                <label for="series_position">Position in Series</label>
+                <input type="text" class="form-input" name="series_position" id="series_position"
+                       value="{{ book.series_position or '' }}" placeholder="e.g., 1 or 1.5">
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" onclick="saveSeries()">Save Series Info</button>
+                <button type="button" class="btn btn-secondary" onclick="refreshMetadata()">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    Refresh from APIs
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- Categories -->
     {% if book.categories %}
     <div class="detail-section">
@@ -308,32 +364,41 @@
 
 {% block extra_js %}
 <script>
-    async function updateStatus(status) {
+    async function updateStatus(status, buttonElement) {
         try {
             const response = await fetch('/api/books/{{ book.id }}', {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
                 body: JSON.stringify({reading_status: status})
             });
-            
+
+            console.log('Update status response:', response.status, response.ok);
+
             if (response.ok) {
                 // Update UI
                 document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
-                event.target.classList.add('active');
+                buttonElement.classList.add('active');
                 showNotification('Reading status updated!', 'success');
+            } else {
+                const errorData = await response.json();
+                console.error('Update status error:', errorData);
+                showNotification('Failed to update status: ' + (errorData.detail || 'Unknown error'), 'error');
             }
         } catch (error) {
+            console.error('Update status error:', error);
             showNotification('Failed to update status', 'error');
         }
     }
 
     async function toggleWishlist() {
         const isWishlist = {{ 'true' if book.is_wishlist else 'false' }};
-        
+
         try {
             const response = await fetch('/api/books/{{ book.id }}', {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
                 body: JSON.stringify({is_wishlist: !isWishlist})
             });
             
@@ -341,7 +406,7 @@
                 const btn = document.getElementById('wishlistBtn');
                 const icon = document.getElementById('wishlistIcon');
                 const text = document.getElementById('wishlistText');
-                
+
                 if (isWishlist) {
                     btn.classList.remove('active');
                     icon.innerHTML = '<ion-icon name="star-outline"></ion-icon>';
@@ -351,30 +416,98 @@
                     icon.innerHTML = '<ion-icon name="star"></ion-icon>';
                     text.textContent = 'In Wishlist';
                 }
-                
+
                 showNotification('Wishlist updated!', 'success');
                 location.reload();
+            } else {
+                const errorData = await response.json();
+                console.error('Toggle wishlist error:', errorData);
+                showNotification('Failed to update wishlist: ' + (errorData.detail || 'Unknown error'), 'error');
             }
         } catch (error) {
+            console.error('Toggle wishlist error:', error);
             showNotification('Failed to update wishlist', 'error');
         }
     }
 
     async function saveNotes() {
         const notes = document.getElementById('notes').value;
-        
+
         try {
             const response = await fetch('/api/books/{{ book.id }}', {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
                 body: JSON.stringify({notes: notes})
             });
-            
+
             if (response.ok) {
                 showNotification('Notes saved!', 'success');
+            } else {
+                const errorData = await response.json();
+                console.error('Save notes error:', errorData);
+                showNotification('Failed to save notes: ' + (errorData.detail || 'Unknown error'), 'error');
             }
         } catch (error) {
+            console.error('Save notes error:', error);
             showNotification('Failed to save notes', 'error');
+        }
+    }
+
+    async function saveSeries() {
+        const seriesName = document.getElementById('series_name').value.trim();
+        const seriesPosition = document.getElementById('series_position').value.trim();
+
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    series_name: seriesName || null,
+                    series_position: seriesPosition || null
+                })
+            });
+
+            if (response.ok) {
+                showNotification('Series information saved!', 'success');
+                // Reload to update any collection links
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const errorData = await response.json();
+                console.error('Save series error:', errorData);
+                showNotification('Failed to save series info: ' + (errorData.detail || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Save series error:', error);
+            showNotification('Failed to save series info', 'error');
+        }
+    }
+
+    async function refreshMetadata() {
+        if (!confirm('This will fetch updated information from Google Books and Open Library. Continue?')) {
+            return;
+        }
+
+        try {
+            showNotification('Refreshing metadata...', 'info');
+
+            const response = await fetch('/api/books/{{ book.id }}/refresh-metadata', {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+
+            if (response.ok) {
+                showNotification('Metadata refreshed! Reloading...', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const errorData = await response.json();
+                console.error('Refresh metadata error:', errorData);
+                showNotification('Failed to refresh metadata: ' + (errorData.detail || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Refresh metadata error:', error);
+            showNotification('Failed to refresh metadata', 'error');
         }
     }
 
@@ -382,12 +515,13 @@
         if (!confirm('Are you sure you want to delete this book from your library?')) {
             return;
         }
-        
+
         try {
             const response = await fetch('/api/books/{{ book.id }}', {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'same-origin'
             });
-            
+
             if (response.ok) {
                 showNotification('Book deleted!', 'success');
                 setTimeout(() => window.location.href = '/app/library', 1000);
