@@ -12,7 +12,6 @@ services:
     volumes:
       - bookstor_postgres_data_v1:/var/lib/postgresql/data
     networks:
-      - bookstor-internal
       - dokploy-network
     deploy:
       replicas: 1
@@ -49,7 +48,6 @@ services:
       - DB_MAX_OVERFLOW=10
       - DB_POOL_TIMEOUT=30
     networks:
-      - bookstor-internal
       - dokploy-network
     deploy:
       replicas: 1
@@ -88,8 +86,5 @@ volumes:
       device: ":/export/appdata/bookstor/postgres"
 
 networks:
-  bookstor-internal:
-    driver: overlay
-    attachable: true
   dokploy-network:
     external: true
