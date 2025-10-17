@@ -4,9 +4,28 @@ from fastapi.staticfiles import StaticFiles
 from .routes import auth, books, admin, user_portal
 from .database import engine, Base
 from .config import settings
+import time
+import logging
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
+
+# Create database tables with retry logic for Docker Swarm
+def init_db_with_retry(max_retries=5, delay=5):
+    """Initialize database with retry logic for container startup"""
+    for attempt in range(max_retries):
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables created successfully")
+            return
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Database connection attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+            else:
+                logger.error(f"Failed to connect to database after {max_retries} attempts")
+                raise
+
+init_db_with_retry()
 
 app = FastAPI(
     title="Bookstor API",
