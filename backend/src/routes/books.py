@@ -27,52 +27,99 @@ async def add_book_by_isbn(
     current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
-    """Add a book to library by scanning ISBN"""
+    """Add a book to library by scanning ISBN - tries Open Library first, then Google Books"""
     # Check if book already exists for this user
     existing_book = db.query(models.Book).filter(
         models.Book.user_id == current_user.id,
         models.Book.isbn == isbn_lookup.isbn
     ).first()
-    
+
     if existing_book:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Book already exists in your library"
         )
-    
-    # Fetch book info from Google Books API
-    book_info = await google_books_service.search_by_isbn(isbn_lookup.isbn)
-    
-    if not book_info:
+
+    # Try Open Library first (primary source)
+    ol_book_info = await openlibrary_service.search_by_isbn(isbn_lookup.isbn)
+
+    # Try Google Books as fallback
+    gb_book_info = await google_books_service.search_by_isbn(isbn_lookup.isbn)
+
+    if not ol_book_info and not gb_book_info:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Book not found in Google Books database"
+            detail="Book not found in Open Library or Google Books database"
         )
-    
+
+    # Merge data: prefer Open Library, fill gaps with Google Books
+    title = (ol_book_info.title if ol_book_info else None) or (gb_book_info.title if gb_book_info else "Unknown Title")
+    subtitle = (ol_book_info.subtitle if ol_book_info else None) or (gb_book_info.subtitle if gb_book_info else None)
+
+    # Authors
+    authors = None
+    if ol_book_info and ol_book_info.authors:
+        authors = ", ".join(ol_book_info.authors)
+    elif gb_book_info and gb_book_info.authors:
+        authors = ", ".join(gb_book_info.authors)
+
+    # Description
+    description = (ol_book_info.description if ol_book_info else None) or (gb_book_info.description if gb_book_info else None)
+
+    # Publisher and published date
+    publisher = (ol_book_info.publisher if ol_book_info else None) or (gb_book_info.publisher if gb_book_info else None)
+    published_date = (ol_book_info.published_date if ol_book_info else None) or (gb_book_info.published_date if gb_book_info else None)
+
+    # Page count
+    page_count = (ol_book_info.page_count if ol_book_info else None) or (gb_book_info.page_count if gb_book_info else None)
+
+    # Categories
+    categories = None
+    if ol_book_info and ol_book_info.categories:
+        categories = ", ".join(ol_book_info.categories)
+    elif gb_book_info and gb_book_info.categories:
+        categories = ", ".join(gb_book_info.categories)
+
+    # Thumbnail
+    thumbnail = (ol_book_info.thumbnail if ol_book_info else None) or (gb_book_info.thumbnail if gb_book_info else None)
+
+    # Series information
+    series_name = (ol_book_info.series_name if ol_book_info else None) or (gb_book_info.series_name if gb_book_info else None)
+    series_position = (ol_book_info.series_position if ol_book_info else None) or (gb_book_info.series_position if gb_book_info else None)
+
+    # Edition and format (Open Library specific)
+    edition = ol_book_info.edition if ol_book_info else None
+    book_format = ol_book_info.book_format if ol_book_info else None
+
+    # Google Books ID
+    google_books_id = gb_book_info.google_books_id if gb_book_info else None
+
     # Create book entry
     db_book = models.Book(
         user_id=current_user.id,
         isbn=isbn_lookup.isbn,
-        google_books_id=book_info.google_books_id,
-        title=book_info.title,
-        subtitle=book_info.subtitle,
-        authors=", ".join(book_info.authors) if book_info.authors else None,
-        description=book_info.description,
-        publisher=book_info.publisher,
-        published_date=book_info.published_date,
-        page_count=book_info.page_count,
-        categories=", ".join(book_info.categories) if book_info.categories else None,
-        thumbnail=book_info.thumbnail,
-        series_name=book_info.series_name,
-        series_position=book_info.series_position,
+        google_books_id=google_books_id,
+        title=title,
+        subtitle=subtitle,
+        authors=authors,
+        description=description,
+        publisher=publisher,
+        published_date=published_date,
+        page_count=page_count,
+        categories=categories,
+        thumbnail=thumbnail,
+        series_name=series_name,
+        series_position=series_position,
+        edition=edition,
+        book_format=book_format,
         reading_status=isbn_lookup.reading_status,
         is_wishlist=isbn_lookup.is_wishlist
     )
-    
+
     db.add(db_book)
     db.commit()
     db.refresh(db_book)
-    
+
     return db_book
 
 
@@ -246,7 +293,7 @@ async def refresh_book_metadata(
     current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
-    """Refresh book metadata from Google Books and Open Library APIs"""
+    """Refresh book metadata from Open Library and Google Books APIs (Open Library primary)"""
     db_book = db.query(models.Book).filter(
         models.Book.id == book_id,
         models.Book.user_id == current_user.id
@@ -258,30 +305,94 @@ async def refresh_book_metadata(
             detail="Book not found"
         )
 
-    # Try to fetch updated info from Google Books using ISBN or title
-    book_info = None
+    # Try Open Library first if we have ISBN
+    ol_book_info = None
     if db_book.isbn:
-        book_info = await google_books_service.search_by_isbn(db_book.isbn)
+        ol_book_info = await openlibrary_service.search_by_isbn(db_book.isbn)
 
-    if not book_info and db_book.title:
-        # Try searching by title and author
+    # Try Google Books as fallback
+    gb_book_info = None
+    if db_book.isbn:
+        gb_book_info = await google_books_service.search_by_isbn(db_book.isbn)
+    elif db_book.title:
+        # Try searching by title and author if no ISBN
         search_query = db_book.title
         if db_book.authors:
             search_query += f" {db_book.authors.split(',')[0]}"
         results = await google_books_service.search_by_title(search_query, max_results=1)
         if results:
-            book_info = results[0]
+            gb_book_info = results[0]
 
-    if book_info:
-        # Update fields that might have changed, but preserve user data
-        if book_info.series_name:
-            db_book.series_name = book_info.series_name
-        if book_info.series_position:
-            db_book.series_position = book_info.series_position
-        if book_info.thumbnail and not db_book.thumbnail:
-            db_book.thumbnail = book_info.thumbnail
-        if book_info.description and not db_book.description:
-            db_book.description = book_info.description
+    # Update all metadata fields, preferring Open Library data
+    if ol_book_info or gb_book_info:
+        # Title and subtitle
+        if ol_book_info and ol_book_info.title:
+            db_book.title = ol_book_info.title
+        elif gb_book_info and gb_book_info.title:
+            db_book.title = gb_book_info.title
+
+        if ol_book_info and ol_book_info.subtitle:
+            db_book.subtitle = ol_book_info.subtitle
+        elif gb_book_info and gb_book_info.subtitle:
+            db_book.subtitle = gb_book_info.subtitle
+
+        # Authors
+        if ol_book_info and ol_book_info.authors:
+            db_book.authors = ", ".join(ol_book_info.authors)
+        elif gb_book_info and gb_book_info.authors:
+            db_book.authors = ", ".join(gb_book_info.authors)
+
+        # Description
+        if ol_book_info and ol_book_info.description:
+            db_book.description = ol_book_info.description
+        elif gb_book_info and gb_book_info.description:
+            db_book.description = gb_book_info.description
+
+        # Publisher and published date
+        if ol_book_info and ol_book_info.publisher:
+            db_book.publisher = ol_book_info.publisher
+        elif gb_book_info and gb_book_info.publisher:
+            db_book.publisher = gb_book_info.publisher
+
+        if ol_book_info and ol_book_info.published_date:
+            db_book.published_date = ol_book_info.published_date
+        elif gb_book_info and gb_book_info.published_date:
+            db_book.published_date = gb_book_info.published_date
+
+        # Page count
+        if ol_book_info and ol_book_info.page_count:
+            db_book.page_count = ol_book_info.page_count
+        elif gb_book_info and gb_book_info.page_count:
+            db_book.page_count = gb_book_info.page_count
+
+        # Categories
+        if ol_book_info and ol_book_info.categories:
+            db_book.categories = ", ".join(ol_book_info.categories)
+        elif gb_book_info and gb_book_info.categories:
+            db_book.categories = ", ".join(gb_book_info.categories)
+
+        # Thumbnail
+        if ol_book_info and ol_book_info.thumbnail:
+            db_book.thumbnail = ol_book_info.thumbnail
+        elif gb_book_info and gb_book_info.thumbnail:
+            db_book.thumbnail = gb_book_info.thumbnail
+
+        # Series information
+        if ol_book_info and ol_book_info.series_name:
+            db_book.series_name = ol_book_info.series_name
+        elif gb_book_info and gb_book_info.series_name:
+            db_book.series_name = gb_book_info.series_name
+
+        if ol_book_info and ol_book_info.series_position:
+            db_book.series_position = ol_book_info.series_position
+        elif gb_book_info and gb_book_info.series_position:
+            db_book.series_position = gb_book_info.series_position
+
+        # Edition and format (Open Library specific)
+        if ol_book_info and ol_book_info.edition:
+            db_book.edition = ol_book_info.edition
+        if ol_book_info and ol_book_info.book_format:
+            db_book.book_format = ol_book_info.book_format
 
         db.commit()
         db.refresh(db_book)

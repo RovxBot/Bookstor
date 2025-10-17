@@ -11,9 +11,25 @@
         padding: 2rem;
     }
 
+    /* Mobile: 2 columns */
+    @media (max-width: 768px) {
+        .books-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+        }
+    }
+
+    /* Very small screens: 1 column */
+    @media (max-width: 400px) {
+        .books-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .book-card {
         background-color: var(--surface);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         overflow: hidden;
         box-shadow: var(--shadow);
         transition: all 0.3s;
@@ -30,6 +46,16 @@
         box-shadow: var(--shadow-lg);
     }
 
+    /* Disable hover effect on touch devices */
+    @media (hover: none) {
+        .book-card:hover {
+            transform: none;
+        }
+        .book-card:active {
+            transform: scale(0.98);
+        }
+    }
+
     .wishlist-badge {
         position: absolute;
         top: 0.75rem;
@@ -43,6 +69,21 @@
         justify-content: center;
         font-size: 1.5rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1;
+    }
+
+    [data-theme="dark"] .wishlist-badge {
+        background-color: rgba(28, 28, 30, 0.95);
+    }
+
+    @media (max-width: 768px) {
+        .wishlist-badge {
+            width: 2rem;
+            height: 2rem;
+            font-size: 1.2rem;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
     }
 
     .book-cover {
@@ -50,6 +91,12 @@
         height: 280px;
         object-fit: cover;
         background-color: var(--background);
+    }
+
+    @media (max-width: 768px) {
+        .book-cover {
+            height: 220px;
+        }
     }
 
     .book-cover-placeholder {
@@ -60,6 +107,13 @@
         align-items: center;
         justify-content: center;
         font-size: 4rem;
+    }
+
+    @media (max-width: 768px) {
+        .book-cover-placeholder {
+            height: 220px;
+            font-size: 3rem;
+        }
     }
 
     .book-info {

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta
+import secrets
 from .. import models, schemas, auth
 from ..database import get_db
 from ..config import settings
@@ -147,4 +149,43 @@ async def toggle_registration(
         "enabled": enabled,
         "message": f"Registration has been {'enabled' if enabled else 'disabled'}"
     }
+
+
+@router.post("/create-web-session")
+async def create_web_session(
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Create a web session from JWT token (for WebView authentication).
+    This endpoint is called by the mobile app after JWT login to establish
+    a cookie-based session for the WebView.
+    """
+    # Create session token
+    session_token = secrets.token_urlsafe(32)
+
+    # Create response with cookies
+    response = JSONResponse(content={
+        "success": True,
+        "message": "Web session created",
+        "user_id": current_user.id,
+        "email": current_user.email
+    })
+
+    # Set session cookies (same as web app login)
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        max_age=30 * 24 * 60 * 60,  # 30 days
+        samesite="lax"
+    )
+    response.set_cookie(
+        key="user_id",
+        value=str(current_user.id),
+        httponly=True,
+        max_age=30 * 24 * 60 * 60,
+        samesite="lax"
+    )
+
+    return response
 

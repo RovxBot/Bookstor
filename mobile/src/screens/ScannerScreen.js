@@ -5,90 +5,64 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import { booksAPI } from '../services/api';
-import { READING_STATUS } from '../config';
-import { useMenu } from '../context/MenuContext';
 import { useTheme } from '../context/ThemeContext';
 
-export default function ScannerScreen({ navigation }) {
+export default function ScannerScreen({ navigation, route }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { openMenu } = useMenu();
   const { theme } = useTheme();
 
   const styles = createStyles(theme);
 
-  const handleBarCodeScanned = async ({ type, data }) => {
-    setScanned(true);
-    setLoading(true);
+  // Get the WebView ref from route params (if passed)
+  const webViewRef = route?.params?.webViewRef;
 
-    try {
-      // Show options for adding the book
-      Alert.alert(
-        'Book Found',
-        `ISBN: ${data}\n\nHow would you like to add this book?`,
-        [
-          {
-            text: 'Add to Library',
-            onPress: () => addBook(data, READING_STATUS.WANT_TO_READ, false),
+  const handleBarCodeScanned = async ({ data }) => {
+    setScanned(true);
+    setLoading(false);
+
+    // Show options for adding the book
+    Alert.alert(
+      'Book Scanned',
+      `ISBN: ${data}\n\nHow would you like to add this book?`,
+      [
+        {
+          text: 'Add to Library',
+          onPress: () => sendToWebView(data, false),
+        },
+        {
+          text: 'Add to Wishlist',
+          onPress: () => sendToWebView(data, true),
+        },
+        {
+          text: 'Cancel',
+          onPress: () => {
+            setScanned(false);
+            navigation.goBack();
           },
-          {
-            text: 'Add to Wishlist',
-            onPress: () => addBook(data, READING_STATUS.WISHLIST, true),
-          },
-          {
-            text: 'Cancel',
-            onPress: () => {
-              setScanned(false);
-              setLoading(false);
-            },
-            style: 'cancel',
-          },
-        ]
-      );
-    } catch (error) {
-      setLoading(false);
-      setScanned(false);
-    }
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
-  const addBook = async (isbn, readingStatus, isWishlist) => {
-    try {
-      const book = await booksAPI.addBookByISBN(isbn, readingStatus, isWishlist);
-      setLoading(false);
-      
-      Alert.alert(
-        'Success',
-        `"${book.title}" has been added to your ${isWishlist ? 'wishlist' : 'library'}!`,
-        [
-          {
-            text: 'View Book',
-            onPress: () => navigation.navigate('BookDetail', { bookId: book.id }),
-          },
-          {
-            text: 'Scan Another',
-            onPress: () => setScanned(false),
-          },
-        ]
-      );
-    } catch (error) {
-      setLoading(false);
-      setScanned(false);
-      
-      const errorMessage = error.response?.data?.detail || 'Failed to add book';
-      Alert.alert('Error', errorMessage, [
-        {
-          text: 'Try Again',
-          onPress: () => setScanned(false),
-        },
-      ]);
+  // Send scanned ISBN to WebView
+  const sendToWebView = (isbn, addToWishlist) => {
+    // Send message to WebView via navigation params
+    if (webViewRef && webViewRef.current) {
+      // Inject JavaScript to handle the scanned ISBN
+      webViewRef.current.injectJavaScript(`
+        window.handleScannedISBN('${isbn}', ${addToWishlist});
+      `);
+
+      console.log('Sent ISBN to WebView:', isbn);
     }
+
+    // Navigate back to WebView
+    navigation.goBack();
   };
 
   if (!permission) {
@@ -126,15 +100,6 @@ export default function ScannerScreen({ navigation }) {
         }}
       />
 
-      <SafeAreaView style={styles.menuButtonContainer} edges={['top']}>
-        <TouchableOpacity
-          onPress={openMenu}
-          style={styles.menuButton}
-        >
-          <Ionicons name="menu" size={28} color="#fff" />
-        </TouchableOpacity>
-      </SafeAreaView>
-
       <View style={styles.overlay}>
         <View style={styles.topOverlay} />
         <View style={styles.middleRow}>
@@ -165,21 +130,6 @@ const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  menuButtonContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 10,
-  },
-  menuButton: {
-    backgroundColor: 'rgba(0, 122, 255, 0.9)',
-    padding: 12,
-    borderRadius: 8,
-  },
-  menuIcon: {
-    fontSize: 24,
-    color: '#fff',
   },
   overlay: {
     flex: 1,

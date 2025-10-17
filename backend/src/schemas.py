@@ -46,6 +46,8 @@ class BookBase(BaseModel):
     isbn: Optional[str] = None
     series_name: Optional[str] = None
     series_position: Optional[str] = None
+    edition: Optional[str] = None
+    book_format: Optional[str] = None
     reading_status: ReadingStatus = ReadingStatus.WANT_TO_READ
     notes: Optional[str] = None
     is_wishlist: bool = False
@@ -67,6 +69,8 @@ class BookUpdate(BaseModel):
     thumbnail: Optional[str] = None
     series_name: Optional[str] = None
     series_position: Optional[str] = None
+    edition: Optional[str] = None
+    book_format: Optional[str] = None
     reading_status: Optional[ReadingStatus] = None
     notes: Optional[str] = None
     is_wishlist: Optional[bool] = None
@@ -98,6 +102,8 @@ class GoogleBookInfo(BaseModel):
     isbn: Optional[str] = None
     series_name: Optional[str] = None
     series_position: Optional[str] = None
+    edition: Optional[str] = None
+    book_format: Optional[str] = None
 
 
 # ISBN Lookup Request

@@ -118,34 +118,10 @@ export const authAPI = {
   },
 };
 
-// Books API
+// Books API - Minimal functions for scanner only
+// All other book operations are handled by the WebView
 export const booksAPI = {
-  searchBooks: async (query, maxResults = 10) => {
-    const response = await api.get('/books/search/', {
-      params: { q: query, max_results: maxResults },
-    });
-    return response.data;
-  },
-
-  getBooks: async (filters = {}) => {
-    const params = new URLSearchParams();
-    if (filters.reading_status) {
-      params.append('reading_status', filters.reading_status);
-    }
-    if (filters.is_wishlist !== undefined) {
-      params.append('is_wishlist', filters.is_wishlist);
-    }
-
-    const queryString = params.toString();
-    const response = await api.get(`/books/${queryString ? '?' + queryString : ''}`);
-    return response.data;
-  },
-
-  getBook: async (bookId) => {
-    const response = await api.get(`/books/${bookId}/`);
-    return response.data;
-  },
-
+  // Only used for scanner - adds book by ISBN
   addBookByISBN: async (isbn, reading_status = 'want_to_read', is_wishlist = false) => {
     const response = await api.post('/books/isbn/', {
       isbn,
@@ -154,31 +130,6 @@ export const booksAPI = {
     });
     return response.data;
   },
-
-  addBookManually: async (bookData) => {
-    const response = await api.post('/books/', bookData);
-    return response.data;
-  },
-
-  updateBook: async (bookId, updates) => {
-    const response = await api.patch(`/books/${bookId}/`, updates);
-    return response.data;
-  },
-
-  deleteBook: async (bookId) => {
-    await api.delete(`/books/${bookId}/`);
-  },
-
-  getCollections: async () => {
-    const response = await api.get('/books/collections/');
-    return response.data;
-  },
-
-  getMissingBooks: async (seriesName) => {
-    const response = await api.get(`/books/collections/${encodeURIComponent(seriesName)}/missing`);
-    return response.data;
-  },
 };
 
 export default api;
-

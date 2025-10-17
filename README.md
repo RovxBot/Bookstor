@@ -9,19 +9,27 @@ Personal library management system with barcode scanning, automatic series detec
 
 ## Latest Releases
 
-- **Version**: `beta-v0.0.2`
+- **Version**: `v0.0.3` (WebView Architecture)
 - **Docker Image**: `ghcr.io/rovxbot/bookstor:latest`
 - **Android APK**: [Download from Releases](https://github.com/RovxBot/Bookstor/releases)
 
 ## Features
 
-### Mobile App
-- Barcode scanning to add books instantly
-- Manage your book collection
-- Wishlist for books you want to read
-- Automatic series detection and collections
-- Dark mode support
-- Personal notes for each book
+### Web App (Desktop & Mobile)
+- **Responsive Design**: Works beautifully on desktop, tablet, and mobile
+- **Library Management**: Organise your book collection with reading status
+- **Wishlist**: Track books you want to read
+- **Collections**: Automatic series detection and grouping
+- **Search & Add**: Search Google Books and add to your library
+- **Dark Mode**: Full dark mode support with consistent theming
+- **Book Details**: View detailed information, add notes, track progress
+
+### Mobile App (Android)
+- **WebView-Based**: Lightweight wrapper around the web app
+- **Native Barcode Scanner**: Fast barcode scanning to add books instantly
+- **Seamless Authentication**: Automatic login synchronisation
+- **Offline-Ready**: Web app cached for offline viewing
+- **Small APK Size**: ~90% smaller than previous version
 
 ### Admin Web Panel
 - User management (create, view, delete users)
@@ -78,6 +86,12 @@ Personal library management system with barcode scanning, automatic series detec
 
 **Latest Build**: Automatically built from main branch via GitHub Actions
 
+**What's New in v0.0.3:**
+- WebView-based architecture (90% smaller APK)
+- Native barcode scanner preserved
+- Seamless web app integration
+- Faster performance and updates
+
 1. **Download the APK:**
    - Go to [Releases](https://github.com/RovxBot/Bookstor/releases)
    - Or download from [Actions Artifacts](https://github.com/RovxBot/Bookstor/actions/workflows/build-apk-local.yml)
@@ -89,11 +103,19 @@ Personal library management system with barcode scanning, automatic series detec
 
 3. **Configure the app:**
    - Open Bookstor
-   - Go to Settings
-   - Enter your server URL
+   - Login or register an account
+   - The app will automatically connect to your server
+   - Use the scanner button to add books via barcode
 
 #### iOS
 1. Download from the App Store (Coming soon. Maybe.)
+
+### Web App Access
+
+You can also access Bookstor directly in your web browser:
+- **Desktop**: Navigate to `http://localhost:8000/app/library`
+- **Mobile**: Navigate to `http://YOUR_SERVER_IP:8000/app/library`
+- **Features**: Full library management, search, collections, and settings
 
 ## Version Information
 
@@ -146,13 +168,33 @@ CORS_ORIGINS=*
 
 ### Mobile App Configuration
 
+**v0.0.3 Note**: The mobile app now uses a WebView to display the web interface. Configuration is done through the native login screen.
+
 1. Open the app
-2. Go to Settings
-3. Enter your server URL:
+2. Enter your server URL on the login screen:
    - Local network: `http://192.168.1.XXX:8000/api`
    - Public server: `https://your-domain.com/api`
+3. Login or register an account
+4. The app will automatically load the web interface
 
 ## Usage
+
+### Web App
+
+Access the web app at `http://localhost:8000/app/library`
+
+**Features:**
+- **Library**: View and filter your book collection by reading status
+- **Wishlist**: Track books you want to read
+- **Collections**: Browse automatically detected book series
+- **Search**: Search Google Books and add to your library
+- **Settings**: Manage your account and preferences
+
+**Mobile Web:**
+- Responsive design optimised for mobile devices
+- Bottom navigation for easy access
+- Touch-friendly interface
+- Dark mode support
 
 ### Admin Panel
 
@@ -177,11 +219,49 @@ See [backend/ADMIN_PANEL.md](backend/ADMIN_PANEL.md) for detailed admin panel do
 
 ### Mobile App
 
-1. **Register an account** - Create your account on first launch
-2. **Scan books** - Use the barcode scanner to add books
-3. **Manage library** - View and organise your collection
-4. **Create wishlist** - Add books you want to read
-5. **Discover series** - Automatically grouped into collections
+**v0.0.3 Architecture:**
+The mobile app is now a lightweight WebView wrapper that displays the web interface with a native barcode scanner.
+
+1. **Login** - Login or register through the native login screen
+2. **Browse Library** - View your collection in the WebView interface
+3. **Scan Books** - Tap the floating scanner button to scan barcodes
+4. **Manage Collection** - All web features available in the app
+5. **Seamless Experience** - Automatic authentication and theme synchronisation
+
+## Architecture
+
+### v0.0.3 WebView Architecture
+
+Bookstor v0.0.3 introduces a major architectural change for the mobile app:
+
+**Previous Architecture (v0.0.2):**
+- Fully native React Native UI
+- Duplicate code for web and mobile
+- 10 screens, ~5,000 lines of mobile UI code
+- Larger APK size (~15-20 MB)
+
+**New Architecture (v0.0.3):**
+- WebView-based mobile app
+- Single UI codebase (web app)
+- 4 screens, ~500 lines of mobile code (90% reduction!)
+- Smaller APK size (~2-3 MB)
+- Native barcode scanner preserved
+
+**Benefits:**
+- ✅ **Single Source of Truth**: All UI changes in one place
+- ✅ **Faster Development**: New features only need web implementation
+- ✅ **Consistent UX**: Identical experience on web and mobile
+- ✅ **Smaller APK**: 90% reduction in mobile code
+- ✅ **Easier Maintenance**: No duplicate features to maintain
+- ✅ **Native Scanner**: Best of both worlds - web UI + native scanner
+
+**How It Works:**
+1. Mobile app loads web interface in a WebView
+2. Native login screen handles authentication
+3. JWT token converted to session cookie for WebView
+4. Floating action button triggers native scanner
+5. Scanner sends ISBN to WebView via JavaScript injection
+6. Web app processes the ISBN and updates the library
 
 ## Troubleshooting
 
