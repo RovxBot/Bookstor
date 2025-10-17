@@ -38,7 +38,7 @@ services:
     image: ghcr.io/rovxbot/bookstor:latest
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000
     environment:
-      - DATABASE_URL=postgresql://bookstor:${BOOKSTOR_DB_PASSWORD}@db:5432/bookstor
+      - DATABASE_URL=postgresql://bookstor:${BOOKSTOR_DB_PASSWORD}@tasks.db:5432/bookstor
       - SECRET_KEY=${SECRET_KEY}
       - GOOGLE_BOOKS_API_KEY=${GOOGLE_BOOKS_API_KEY:-}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
