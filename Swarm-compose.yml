@@ -67,7 +67,7 @@ services:
         - "traefik.docker.network=dokploy-network"
         - "diun.enable=true"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O /dev/null http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
