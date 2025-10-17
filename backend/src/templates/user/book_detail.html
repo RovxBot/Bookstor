@@ -257,7 +257,25 @@
                     {{ book.publisher }}
                 </div>
                 {% endif %}
+                {% if book.edition %}
+                <div class="book-meta-item">
+                    <ion-icon name="bookmark-outline"></ion-icon>
+                    {{ book.edition }}
+                </div>
+                {% endif %}
+                {% if book.book_format %}
+                <div class="book-meta-item">
+                    <ion-icon name="albums-outline"></ion-icon>
+                    {{ book.book_format }}
+                </div>
+                {% endif %}
             </div>
+
+            <!-- Refresh Metadata Button -->
+            <button type="button" class="btn btn-secondary" onclick="refreshMetadata()" style="margin-top: 1rem;">
+                <ion-icon name="refresh-outline" style="margin-right: 0.5rem;"></ion-icon>
+                Refresh Metadata
+            </button>
         </div>
     </div>
 </div>
@@ -485,12 +503,12 @@
     }
 
     async function refreshMetadata() {
-        if (!confirm('This will fetch updated information from Google Books and Open Library. Continue?')) {
+        if (!confirm('This will fetch updated information from Open Library and Google Books (Open Library preferred). All metadata will be refreshed. Continue?')) {
             return;
         }
 
         try {
-            showNotification('Refreshing metadata...', 'info');
+            showNotification('Refreshing metadata from Open Library and Google Books...', 'info');
 
             const response = await fetch('/api/books/{{ book.id }}/refresh-metadata', {
                 method: 'POST',
@@ -498,7 +516,7 @@
             });
 
             if (response.ok) {
-                showNotification('Metadata refreshed! Reloading...', 'success');
+                showNotification('Metadata refreshed successfully! Reloading...', 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
                 const errorData = await response.json();

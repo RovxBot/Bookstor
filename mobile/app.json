@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bookstor",
     "slug": "bookstor",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,14 +22,14 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.bookstor.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "version": "beta-v0.0.2"
+      "version": "v0.0.3"
     }
   }
 }

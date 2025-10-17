@@ -1,12 +1,180 @@
 import httpx
 import re
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict, Any
+from pydantic import BaseModel
+
+class OpenLibraryBookInfo(BaseModel):
+    """Book information from Open Library API"""
+    title: str
+    subtitle: Optional[str] = None
+    authors: Optional[List[str]] = None
+    description: Optional[str] = None
+    publisher: Optional[str] = None
+    published_date: Optional[str] = None
+    page_count: Optional[int] = None
+    categories: Optional[List[str]] = None
+    thumbnail: Optional[str] = None
+    isbn: Optional[str] = None
+    series_name: Optional[str] = None
+    series_position: Optional[str] = None
+    edition: Optional[str] = None
+    book_format: Optional[str] = None  # paperback, hardcover, etc.
 
 class OpenLibraryService:
-    """Service for fetching book series information and cover art from Open Library API"""
+    """Service for fetching book information from Open Library API"""
     BASE_URL = "https://openlibrary.org"
     COVERS_URL = "https://covers.openlibrary.org/b"
-    
+
+    async def search_by_isbn(self, isbn: str) -> Optional[OpenLibraryBookInfo]:
+        """
+        Search for a book by ISBN using Open Library API
+        Returns: OpenLibraryBookInfo object if found, None otherwise
+        """
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                # Search for the book by ISBN
+                params = {
+                    'q': f'isbn:{isbn}',
+                    'limit': 1
+                }
+                response = await client.get(f"{self.BASE_URL}/search.json", params=params)
+
+                if response.status_code != 200:
+                    return None
+
+                data = response.json()
+                docs = data.get('docs', [])
+
+                if not docs:
+                    return None
+
+                doc = docs[0]
+
+                # Get the edition key to fetch more detailed information
+                edition_key = doc.get('edition_key', [None])[0] if doc.get('edition_key') else None
+
+                # Fetch edition details if available
+                edition_data = None
+                if edition_key:
+                    edition_response = await client.get(f"{self.BASE_URL}/books/{edition_key}.json")
+                    if edition_response.status_code == 200:
+                        edition_data = edition_response.json()
+
+                # Get work key for series and description
+                work_key = doc.get('key')
+                work_data = None
+                if work_key:
+                    work_response = await client.get(f"{self.BASE_URL}{work_key}.json")
+                    if work_response.status_code == 200:
+                        work_data = work_response.json()
+
+                # Extract all book information
+                title = doc.get('title', 'Unknown Title')
+                subtitle = doc.get('subtitle') or (edition_data.get('subtitle') if edition_data else None)
+                authors = doc.get('author_name', [])
+
+                # Get description from work data or edition data
+                description = None
+                if work_data:
+                    desc = work_data.get('description')
+                    if isinstance(desc, dict):
+                        description = desc.get('value')
+                    elif isinstance(desc, str):
+                        description = desc
+                if not description and edition_data:
+                    desc = edition_data.get('description')
+                    if isinstance(desc, dict):
+                        description = desc.get('value')
+                    elif isinstance(desc, str):
+                        description = desc
+
+                # Publisher and published date
+                publisher = doc.get('publisher', [None])[0] if doc.get('publisher') else None
+                published_date = doc.get('publish_date', [None])[0] if doc.get('publish_date') else None
+                if not published_date:
+                    published_date = str(doc.get('first_publish_year')) if doc.get('first_publish_year') else None
+
+                # Page count
+                page_count = doc.get('number_of_pages_median')
+                if not page_count and edition_data:
+                    page_count = edition_data.get('number_of_pages')
+
+                # Categories (subjects)
+                categories = doc.get('subject', [])[:5]  # Limit to first 5 subjects
+
+                # Cover image
+                thumbnail = await self.get_cover_by_isbn(isbn, size="L")
+
+                # Series information
+                series_name, series_position = None, None
+                if work_data:
+                    series_name, series_position = self._extract_series_from_work(work_data)
+                if not series_name:
+                    # Try extracting from title
+                    series_name, series_position = self._extract_series_from_title(title, subtitle)
+
+                # Edition information
+                edition = None
+                if edition_data:
+                    edition = edition_data.get('edition_name')
+
+                # Format (paperback/hardcover)
+                book_format_type = None
+                if edition_data:
+                    physical_format = edition_data.get('physical_format', '').lower()
+                    if 'paperback' in physical_format or 'mass market' in physical_format:
+                        book_format_type = 'Paperback'
+                    elif 'hardcover' in physical_format or 'hardback' in physical_format:
+                        book_format_type = 'Hardcover'
+                    elif physical_format:
+                        book_format_type = physical_format.title()
+
+                return OpenLibraryBookInfo(
+                    title=title,
+                    subtitle=subtitle,
+                    authors=authors if authors else None,
+                    description=description,
+                    publisher=publisher,
+                    published_date=published_date,
+                    page_count=page_count,
+                    categories=categories if categories else None,
+                    thumbnail=thumbnail,
+                    isbn=isbn,
+                    series_name=series_name,
+                    series_position=series_position,
+                    edition=edition,
+                    book_format=book_format_type
+                )
+
+        except Exception as e:
+            print(f"Error fetching book data from Open Library: {e}")
+            return None
+
+    def _extract_series_from_title(self, title: str, subtitle: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Extract series information from title and subtitle
+        Returns: (series_name, series_position)
+        """
+        full_title = f"{title} {subtitle}" if subtitle else title
+
+        # Patterns to extract series and position
+        patterns = [
+            r'(.+?)\s+(?:Book|#|Vol\.?|Volume)\s+(\d+)',
+            r'(.+?)\s+\((\d+)\)',
+            r'(.+?):\s+Book\s+(\d+)',
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, full_title, re.IGNORECASE)
+            if match:
+                series_name = match.group(1).strip()
+                series_position = match.group(2)
+                # Clean up series name
+                series_name = re.sub(r'\s+(?:Series|Saga|Trilogy|Chronicles)$', '', series_name, flags=re.IGNORECASE).strip()
+                return series_name, series_position
+
+        return None, None
+
     async def get_series_info_by_isbn(self, isbn: str) -> Tuple[Optional[str], Optional[str]]:
         """
         Get series information for a book by ISBN from Open Library

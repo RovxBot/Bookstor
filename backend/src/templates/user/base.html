@@ -2,7 +2,10 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>{% block title %}Bookstor{% endblock %}</title>
     <link rel="stylesheet" href="/static/theme.css?v=2">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
@@ -11,12 +14,25 @@
         /* User Portal Specific Styles */
         :root {
             --sidebar-width: 250px;
+            --mobile-header-height: 60px;
+            --mobile-bottom-nav-height: 60px;
         }
 
         body {
             display: flex;
             min-height: 100vh;
             margin: 0;
+            /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior-y: contain;
+        }
+
+        /* WebView detection class - will be added by JavaScript */
+        body.is-webview .desktop-only {
+            display: none !important;
+        }
+
+        body.is-mobile .desktop-only {
+            display: none !important;
         }
 
         /* Sidebar Navigation */
@@ -154,48 +170,213 @@
             padding: 2rem;
         }
 
+        /* Mobile Bottom Navigation */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--mobile-bottom-nav-height);
+            background-color: var(--surface);
+            border-top: 1px solid var(--border);
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-bottom-nav-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 0.5rem;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem;
+            min-width: 60px;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--primary-colour);
+            background-color: var(--background);
+        }
+
+        .mobile-nav-item ion-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-nav-item span {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--mobile-header-height);
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: 999;
+            align-items: center;
+            padding: 0 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-colour);
+            margin: 0;
+            flex: 1;
+            text-align: center;
+        }
+
+        .mobile-header-logo {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
+            /* Hide desktop sidebar */
             .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                z-index: 1000;
+                display: none;
             }
 
-            .sidebar.mobile-open {
-                transform: translateX(0);
+            /* Show mobile navigation */
+            .mobile-bottom-nav {
+                display: block;
             }
 
+            .mobile-header {
+                display: flex;
+            }
+
+            /* Adjust main content for mobile */
             .main-content {
                 margin-left: 0;
+                padding-top: var(--mobile-header-height);
+                padding-bottom: var(--mobile-bottom-nav-height);
             }
 
-            .mobile-menu-btn {
-                display: block;
-                position: fixed;
-                top: 1rem;
-                left: 1rem;
-                z-index: 999;
-                background-color: var(--primary-colour);
-                color: white;
-                border: none;
+            .content-header {
+                padding: 1.5rem 1rem;
+            }
+
+            .content-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content-body {
+                padding: 1rem;
+            }
+
+            /* Touch-friendly buttons */
+            button, .btn, a.btn {
+                min-height: 44px;
+                min-width: 44px;
+                padding: 0.75rem 1.25rem;
+                font-size: 1rem;
+            }
+
+            /* Touch-friendly form inputs */
+            input, textarea, select {
+                min-height: 44px;
+                font-size: 16px; /* Prevents zoom on iOS */
                 padding: 0.75rem;
-                border-radius: 0.5rem;
-                cursor: pointer;
+            }
+
+            /* Improve tap targets */
+            .nav-item, .mobile-nav-item {
+                min-height: 44px;
+                padding: 0.75rem;
             }
         }
 
         .mobile-menu-btn {
             display: none;
         }
+
+        /* Floating Action Button (FAB) for Scanner */
+        .fab-scanner {
+            display: none;
+            position: fixed;
+            bottom: calc(var(--mobile-bottom-nav-height) + 1rem);
+            right: 1rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-colour), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .fab-scanner:active {
+            transform: scale(0.95);
+        }
+
+        .fab-scanner ion-icon {
+            font-size: 2rem;
+        }
+
+        /* Show FAB only on mobile and in WebView */
+        @media (max-width: 768px) {
+            body.is-webview .fab-scanner {
+                display: flex;
+            }
+        }
+
+        /* Pulse animation for FAB */
+        @keyframes fab-pulse {
+            0% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(var(--primary-colour-rgb, 59, 130, 246), 0.6);
+            }
+            100% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .fab-scanner.pulse {
+            animation: fab-pulse 2s infinite;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <span class="mobile-header-logo">📚</span>
+        <h1 class="mobile-header-title">Bookstor</h1>
+    </header>
 
-    <!-- Sidebar Navigation -->
+    <!-- Desktop Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">📚</div>
@@ -259,7 +440,72 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <div class="mobile-bottom-nav-container">
+            <a href="/app/library" class="mobile-nav-item {% if request.url.path == '/app/library' %}active{% endif %}">
+                <ion-icon name="library"></ion-icon>
+                <span>Library</span>
+            </a>
+            <a href="/app/wishlist" class="mobile-nav-item {% if request.url.path == '/app/wishlist' %}active{% endif %}">
+                <ion-icon name="star"></ion-icon>
+                <span>Wishlist</span>
+            </a>
+            <a href="/app/collections" class="mobile-nav-item {% if request.url.path == '/app/collections' %}active{% endif %}">
+                <ion-icon name="albums"></ion-icon>
+                <span>Collections</span>
+            </a>
+            <a href="/app/search" class="mobile-nav-item {% if request.url.path == '/app/search' %}active{% endif %}">
+                <ion-icon name="search"></ion-icon>
+                <span>Search</span>
+            </a>
+            <a href="/app/settings" class="mobile-nav-item {% if request.url.path == '/app/settings' %}active{% endif %}">
+                <ion-icon name="settings"></ion-icon>
+                <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Floating Action Button for Scanner (WebView only) -->
+    <button class="fab-scanner pulse" onclick="window.openScanner()" title="Scan Barcode">
+        <ion-icon name="barcode-outline"></ion-icon>
+    </button>
+
     <script>
+        // Detect WebView and Mobile Environment
+        function detectEnvironment() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+            // Detect if running in WebView
+            const isWebView = (
+                // React Native WebView
+                window.ReactNativeWebView !== undefined ||
+                // Android WebView
+                /wv/.test(userAgent) ||
+                // iOS WebView
+                /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(userAgent)
+            );
+
+            // Detect mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
+                           window.innerWidth <= 768;
+
+            // Add classes to body
+            if (isWebView) {
+                document.body.classList.add('is-webview');
+                console.log('Running in WebView');
+            }
+
+            if (isMobile) {
+                document.body.classList.add('is-mobile');
+                console.log('Running on mobile device');
+            }
+
+            // Store in window for other scripts to use
+            window.isWebView = isWebView;
+            window.isMobile = isMobile;
+        }
+
         // Theme Management
         function initTheme() {
             const savedTheme = localStorage.getItem('themeMode') || 'light';
@@ -279,23 +525,6 @@
             localStorage.setItem('themeMode', theme);
         }
 
-        function toggleMobileMenu() {
-            document.getElementById('sidebar').classList.toggle('mobile-open');
-        }
-
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const menuBtn = document.querySelector('.mobile-menu-btn');
-
-            if (window.innerWidth <= 768 &&
-                !sidebar.contains(event.target) &&
-                !menuBtn.contains(event.target) &&
-                sidebar.classList.contains('mobile-open')) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
-
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             const savedTheme = localStorage.getItem('themeMode');
@@ -304,7 +533,182 @@
             }
         });
 
-        // Initialize theme on page load
+        // Prevent zoom on double-tap for mobile
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // ============================================================================
+        // React Native WebView Bridge
+        // ============================================================================
+
+        // Function to send messages to React Native
+        window.sendToNative = function(message) {
+            if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                console.log('Sent to native:', message);
+            } else {
+                console.log('Not in WebView, message not sent:', message);
+            }
+        };
+
+        // Function to open native scanner
+        window.openScanner = function() {
+            window.sendToNative({
+                type: 'OPEN_SCANNER'
+            });
+        };
+
+        // Function to handle scanned ISBN from native scanner
+        window.handleScannedISBN = function(isbn, addToWishlist = false) {
+            console.log('Received scanned ISBN:', isbn, 'Wishlist:', addToWishlist);
+
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'scanner-loading';
+            loadingDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--surface);
+                padding: 2rem;
+                border-radius: 1rem;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+            `;
+            loadingDiv.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📚</div>
+                <div style="font-size: 1.2rem; color: var(--text-primary);">Adding book...</div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">ISBN: ${isbn}</div>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            // Add book via API
+            fetch('/api/isbn/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Include cookies for session auth
+                body: JSON.stringify({
+                    isbn: isbn,
+                    reading_status: addToWishlist ? 'wishlist' : 'want_to_read',
+                    is_wishlist: addToWishlist
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(book => {
+                // Remove loading indicator
+                document.body.removeChild(loadingDiv);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: var(--success-colour, #10b981);
+                    color: white;
+                    padding: 1.5rem 2rem;
+                    border-radius: 1rem;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    text-align: center;
+                    max-width: 80%;
+                `;
+                successDiv.innerHTML = `
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✓</div>
+                    <div style="font-size: 1.1rem; font-weight: 600;">"${book.title}" added!</div>
+                `;
+                document.body.appendChild(successDiv);
+
+                // Navigate to book detail after 1.5 seconds
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                    window.location.href = `/app/book/${book.id}`;
+                }, 1500);
+            })
+            .catch(error => {
+                // Remove loading indicator
+                if (document.getElementById('scanner-loading')) {
+                    document.body.removeChild(loadingDiv);
+                }
+
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: var(--danger-colour, #ef4444);
+                    color: white;
+                    padding: 1.5rem 2rem;
+                    border-radius: 1rem;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    text-align: center;
+                    max-width: 80%;
+                `;
+                errorDiv.innerHTML = `
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✗</div>
+                    <div style="font-size: 1.1rem; font-weight: 600;">Failed to add book</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">${error.detail || 'Please try again'}</div>
+                `;
+                document.body.appendChild(errorDiv);
+
+                // Remove error after 3 seconds
+                setTimeout(() => {
+                    if (document.body.contains(errorDiv)) {
+                        document.body.removeChild(errorDiv);
+                    }
+                }, 3000);
+            });
+        };
+
+        // Listen for messages from React Native
+        window.addEventListener('message', function(event) {
+            try {
+                const message = JSON.parse(event.data);
+                console.log('Received message from native:', message);
+
+                switch(message.type) {
+                    case 'SCANNED_ISBN':
+                        window.handleScannedISBN(message.isbn, message.addToWishlist || false);
+                        break;
+                    case 'THEME_CHANGED':
+                        if (message.theme) {
+                            applyTheme(message.theme);
+                        }
+                        break;
+                    default:
+                        console.log('Unknown message type:', message.type);
+                }
+            } catch (e) {
+                console.error('Error parsing message from native:', e);
+            }
+        });
+
+        // Also listen for React Native WebView messages (different event)
+        document.addEventListener('message', function(event) {
+            window.dispatchEvent(new MessageEvent('message', { data: event.data }));
+        });
+
+        // Initialize on page load
+        detectEnvironment();
         initTheme();
     </script>
     {% block extra_js %}{% endblock %}

@@ -48,6 +48,8 @@ class Book(Base):
     thumbnail = Column(String, nullable=True)
     series_name = Column(String, nullable=True)  # Extracted series name
     series_position = Column(String, nullable=True)  # Book number in series
+    edition = Column(String, nullable=True)  # Edition information (e.g., "First Edition", "Revised Edition")
+    book_format = Column(String, nullable=True)  # Format (e.g., "Paperback", "Hardcover")
     
     # User-specific data
     reading_status = Column(Enum(ReadingStatus), default=ReadingStatus.WANT_TO_READ)
