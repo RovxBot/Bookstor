@@ -4,7 +4,6 @@ services:
   # PostgreSQL Database for Bookstor
   db:
     image: postgres:15-alpine
-    hostname: db
     environment:
       - POSTGRES_USER=bookstor
       - POSTGRES_PASSWORD=${BOOKSTOR_DB_PASSWORD}
@@ -15,7 +14,6 @@ services:
       - dokploy-network
     deploy:
       replicas: 1
-      endpoint_mode: dnsrr
       restart_policy:
         condition: on-failure
       resources:
@@ -38,7 +36,7 @@ services:
     image: ghcr.io/rovxbot/bookstor:latest
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000
     environment:
-      - DATABASE_URL=postgresql://bookstor:${BOOKSTOR_DB_PASSWORD}@tasks.db:5432/bookstor
+      - DATABASE_URL=postgresql://bookstor:${BOOKSTOR_DB_PASSWORD}@db:5432/bookstor
       - SECRET_KEY=${SECRET_KEY}
       - GOOGLE_BOOKS_API_KEY=${GOOGLE_BOOKS_API_KEY:-}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
