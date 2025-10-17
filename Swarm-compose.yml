@@ -64,7 +64,6 @@ services:
         - "traefik.enable=true"
         - "traefik.http.routers.bookstor.rule=Host(`bookstor.cooked.beer`)"
         - "traefik.http.routers.bookstor.entrypoints=web"
-        - "traefik.http.routers.bookstor.service=bookstor"
         - "traefik.http.services.bookstor.loadbalancer.server.port=8000"
         - "traefik.docker.lbswarm=true"
         - "traefik.docker.network=dokploy-network"
