@@ -5,6 +5,18 @@ All notable changes to Bookstor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.0.4] - 2025-10-18
+
+### Fixed
+- Fixed mobile app login redirect issue where `/api/app/library` was returning 404
+- Fixed WebView URL handling to properly strip `/api` suffix from server URL
+- Fixed authentication redirect in `/app/library` route to use proper RedirectResponse
+- Improved session cookie handling for mobile WebView authentication
+
+### Changed
+- Updated `require_user()` function to return proper 401 error instead of malformed redirect
+- Enhanced WebView initialization to handle server URLs with or without `/api` suffix
+
 ## [v0.0.3] - 2025-10-17
 
 ### 🎉 Major Architecture Change: WebView-Based Mobile App

@@ -86,11 +86,11 @@ Personal library management system with barcode scanning, automatic series detec
 
 **Latest Build**: Automatically built from main branch via GitHub Actions
 
-**What's New in v0.0.3:**
-- WebView-based architecture (90% smaller APK)
-- Native barcode scanner preserved
-- Seamless web app integration
-- Faster performance and updates
+**What's New in v0.0.4:**
+- Fixed mobile app login redirect issue
+- Improved WebView URL handling
+- Enhanced session management
+- Bug fixes and stability improvements
 
 1. **Download the APK:**
    - Go to [Releases](https://github.com/RovxBot/Bookstor/releases)
