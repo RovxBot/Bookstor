@@ -74,9 +74,12 @@ export default function LoginScreen({ navigation }) {
     try {
       await authAPI.setServerUrl(serverUrl);
 
-      // Try to fetch the root endpoint
+      // Extract base URL (remove /api if present)
+      const baseUrl = serverUrl.replace(/\/api\/?$/, '');
+
+      // Try to fetch the health endpoint
       const axios = require('axios');
-      const response = await axios.get(serverUrl.replace('/api', '/health'), {
+      const response = await axios.get(`${baseUrl}/health`, {
         timeout: 5000,
       });
 
@@ -86,6 +89,8 @@ export default function LoginScreen({ navigation }) {
           `Server is reachable and responding.\n\nYou can now log in with your credentials.`,
           [{ text: 'OK' }]
         );
+        // Also check registration status after successful connection
+        checkRegistrationStatus(serverUrl);
       }
     } catch (error) {
       console.error('Connection test error:', error);
@@ -95,7 +100,7 @@ export default function LoginScreen({ navigation }) {
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         errorMessage = 'Connection timeout. Server is not responding.\n\nCheck:\n• Server is running\n• URL is correct\n• Port number is included';
       } else if (error.code === 'ECONNREFUSED') {
-        errorMessage = 'Connection refused.\n\nCheck:\n• Server is running on port 8000\n• Firewall is not blocking the connection';
+        errorMessage = 'Connection refused.\n\nCheck:\n• Server is running\n• Firewall is not blocking the connection';
       } else if (error.message === 'Network Error') {
         errorMessage = 'Network error.\n\nCheck:\n• You are on the same network as the server\n• Server IP address is correct\n• WiFi is connected';
       } else {

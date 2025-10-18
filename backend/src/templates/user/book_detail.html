@@ -4,68 +4,143 @@
 
 {% block extra_css %}
 <style>
+    /* Netflix-inspired Hero Section */
     .book-hero {
         position: relative;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 3rem 2rem;
-        color: white;
+        height: 80vh;
+        min-height: 600px;
+        background: var(--background);
+        overflow: hidden;
+    }
+
+    .book-hero-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(20px);
+        transform: scale(1.1);
+        opacity: 0.3;
+    }
+
+    .book-hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, var(--background) 0%, rgba(0,0,0,0.3) 50%, var(--background) 100%),
+                    linear-gradient(to top, var(--background) 0%, transparent 50%);
     }
 
     .book-hero-content {
-        max-width: 1200px;
+        position: relative;
+        z-index: 2;
+        max-width: 1400px;
         margin: 0 auto;
+        padding: 4rem 2rem;
+        height: 100%;
         display: flex;
-        gap: 2rem;
-        align-items: flex-start;
+        align-items: center;
+        gap: 3rem;
     }
 
     .book-cover-large {
-        width: 200px;
-        height: 300px;
+        width: 350px;
+        height: 525px;
         object-fit: cover;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        transition: transform 0.3s;
+    }
+
+    .book-cover-large:hover {
+        transform: scale(1.02);
     }
 
     .book-cover-placeholder-large {
-        width: 200px;
-        height: 300px;
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 0.5rem;
+        width: 350px;
+        height: 525px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 5rem;
+        font-size: 8rem;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
     }
 
     .book-hero-info {
         flex: 1;
+        color: var(--text-primary);
+    }
+
+    .book-status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .badge-want_to_read {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+    }
+
+    .badge-currently_reading {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+    }
+
+    .badge-read {
+        background: rgba(139, 92, 246, 0.2);
+        color: #8b5cf6;
     }
 
     .book-hero-title {
-        font-size: 2rem;
+        font-size: 3.5rem;
         font-weight: 700;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        line-height: 1.1;
     }
 
     .book-hero-authors {
-        font-size: 1.25rem;
-        opacity: 0.9;
-        margin-bottom: 1rem;
+        font-size: 1.75rem;
+        opacity: 0.8;
+        margin-bottom: 1.5rem;
     }
 
     .book-meta {
         display: flex;
-        gap: 1.5rem;
+        gap: 2rem;
         flex-wrap: wrap;
-        margin-bottom: 1.5rem;
-        opacity: 0.9;
+        margin-bottom: 2rem;
+        font-size: 1.125rem;
     }
 
     .book-meta-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        opacity: 0.9;
+    }
+
+    .book-meta-item ion-icon {
+        font-size: 1.5rem;
+    }
+
+    .book-description-preview {
+        font-size: 1.125rem;
+        line-height: 1.7;
+        margin-bottom: 2rem;
+        max-width: 800px;
+        opacity: 0.9;
     }
 
     .book-actions {
@@ -74,25 +149,99 @@
         flex-wrap: wrap;
     }
 
+    .hero-btn {
+        padding: 1rem 2rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+    .hero-btn ion-icon {
+        font-size: 1.5rem;
+    }
+
+    .hero-btn-primary {
+        background: var(--primary-colour);
+        color: white;
+    }
+
+    .hero-btn-primary:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3);
+    }
+
+    .hero-btn-secondary {
+        background: var(--surface);
+        color: var(--text-primary);
+    }
+
+    .hero-btn-secondary:hover {
+        background: var(--border);
+    }
+
     .book-detail-content {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 2rem;
+        padding: 3rem 2rem;
     }
 
     .detail-section {
         background-color: var(--surface);
-        border-radius: 0.75rem;
-        padding: 2rem;
+        border-radius: 12px;
+        padding: 2.5rem;
         margin-bottom: 2rem;
-        box-shadow: var(--shadow);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: 1px solid var(--border);
     }
 
     .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
         color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-title ion-icon {
+        font-size: 1.75rem;
+        color: var(--primary-colour);
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+    }
+
+    .info-value {
+        font-size: 1.125rem;
+        color: var(--text-primary);
+        font-weight: 500;
     }
 
     .reading-status-selector {
@@ -220,24 +369,104 @@
         border-color: var(--primary-colour);
         box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
     }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .book-hero {
+            height: auto;
+            min-height: auto;
+        }
+
+        .book-hero-content {
+            flex-direction: column;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        .book-cover-large,
+        .book-cover-placeholder-large {
+            width: 250px;
+            height: 375px;
+        }
+
+        .book-hero-title {
+            font-size: 2rem;
+        }
+
+        .book-hero-authors {
+            font-size: 1.25rem;
+        }
+
+        .book-meta {
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .book-description-preview {
+            font-size: 1rem;
+        }
+
+        .book-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .hero-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .book-detail-content {
+            padding: 2rem 1rem;
+        }
+
+        .detail-section {
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="book-hero">
+    {% if book.thumbnail %}
+    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-hero-background">
+    {% endif %}
+    <div class="book-hero-overlay"></div>
     <div class="book-hero-content">
         {% if book.thumbnail %}
         <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover-large">
         {% else %}
         <div class="book-cover-placeholder-large">📚</div>
         {% endif %}
-        
+
         <div class="book-hero-info">
+            <div class="book-status-badge badge-{{ book.reading_status }}">
+                {% if book.reading_status == 'want_to_read' %}
+                Want to Read
+                {% elif book.reading_status == 'currently_reading' %}
+                Currently Reading
+                {% elif book.reading_status == 'read' %}
+                Finished
+                {% endif %}
+            </div>
             <h1 class="book-hero-title">{{ book.title }}</h1>
+            {% if book.subtitle %}
+            <div class="book-hero-authors" style="font-size: 1.25rem; margin-bottom: 0.5rem;">{{ book.subtitle }}</div>
+            {% endif %}
             {% if book.authors %}
             <div class="book-hero-authors">by {{ book.authors }}</div>
             {% endif %}
-            
+
             <div class="book-meta">
                 {% if book.published_date %}
                 <div class="book-meta-item">
@@ -251,10 +480,10 @@
                     {{ book.page_count }} pages
                 </div>
                 {% endif %}
-                {% if book.publisher %}
+                {% if book.book_format %}
                 <div class="book-meta-item">
-                    <ion-icon name="business-outline"></ion-icon>
-                    {{ book.publisher }}
+                    <ion-icon name="albums-outline"></ion-icon>
+                    {{ book.book_format }}
                 </div>
                 {% endif %}
                 {% if book.edition %}
@@ -263,27 +492,124 @@
                     {{ book.edition }}
                 </div>
                 {% endif %}
-                {% if book.book_format %}
-                <div class="book-meta-item">
-                    <ion-icon name="albums-outline"></ion-icon>
-                    {{ book.book_format }}
-                </div>
-                {% endif %}
             </div>
 
-            <!-- Refresh Metadata Button -->
-            <button type="button" class="btn btn-secondary" onclick="refreshMetadata()" style="margin-top: 1rem;">
-                <ion-icon name="refresh-outline" style="margin-right: 0.5rem;"></ion-icon>
-                Refresh Metadata
-            </button>
+            {% if book.description %}
+            <div class="book-description-preview">
+                {{ book.description[:250] }}{% if book.description|length > 250 %}...{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="book-actions">
+                <button type="button" class="hero-btn hero-btn-primary" onclick="refreshMetadata()">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    Refresh Metadata
+                </button>
+                {% if book.is_wishlist %}
+                <button type="button" class="hero-btn hero-btn-secondary" onclick="removeFromWishlist()">
+                    <ion-icon name="heart"></ion-icon>
+                    Remove from Wishlist
+                </button>
+                {% else %}
+                <button type="button" class="hero-btn hero-btn-secondary" onclick="addToWishlist()">
+                    <ion-icon name="heart-outline"></ion-icon>
+                    Add to Wishlist
+                </button>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 
 <div class="book-detail-content">
+    <!-- Book Information Grid -->
+    <div class="detail-section">
+        <h2 class="section-title">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Book Information
+        </h2>
+        <div class="info-grid">
+            {% if book.isbn %}
+            <div class="info-item">
+                <div class="info-label">ISBN</div>
+                <div class="info-value">{{ book.isbn }}</div>
+            </div>
+            {% endif %}
+            {% if book.publisher %}
+            <div class="info-item">
+                <div class="info-label">Publisher</div>
+                <div class="info-value">{{ book.publisher }}</div>
+            </div>
+            {% endif %}
+            {% if book.published_date %}
+            <div class="info-item">
+                <div class="info-label">Published</div>
+                <div class="info-value">{{ book.published_date }}</div>
+            </div>
+            {% endif %}
+            {% if book.page_count %}
+            <div class="info-item">
+                <div class="info-label">Pages</div>
+                <div class="info-value">{{ book.page_count }}</div>
+            </div>
+            {% endif %}
+            {% if book.book_format %}
+            <div class="info-item">
+                <div class="info-label">Format</div>
+                <div class="info-value">{{ book.book_format }}</div>
+            </div>
+            {% endif %}
+            {% if book.edition %}
+            <div class="info-item">
+                <div class="info-label">Edition</div>
+                <div class="info-value">{{ book.edition }}</div>
+            </div>
+            {% endif %}
+            {% if book.series_name %}
+            <div class="info-item">
+                <div class="info-label">Series</div>
+                <div class="info-value">
+                    {{ book.series_name }}
+                    {% if book.series_position %} #{{ book.series_position }}{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% if book.added_at %}
+            <div class="info-item">
+                <div class="info-label">Added to Library</div>
+                <div class="info-value">{{ book.added_at.strftime('%B %d, %Y') }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% if book.categories %}
+        <div style="margin-top: 1.5rem;">
+            <div class="info-label" style="margin-bottom: 0.75rem;">Categories</div>
+            <div class="book-categories">
+                {% for category in book.categories.split(',') %}
+                <span class="category-badge">{{ category.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Description -->
+    {% if book.description %}
+    <div class="detail-section">
+        <h2 class="section-title">
+            <ion-icon name="book-outline"></ion-icon>
+            Description
+        </h2>
+        <div class="book-description">{{ book.description }}</div>
+    </div>
+    {% endif %}
+
     <!-- Reading Status -->
     <div class="detail-section">
-        <h2 class="section-title">Reading Status</h2>
+        <h2 class="section-title">
+            <ion-icon name="bookmark-outline"></ion-icon>
+            Reading Status
+        </h2>
         <form method="POST" action="/api/books/{{ book.id }}" id="statusForm">
             <div class="reading-status-selector">
                 <button type="button" class="status-btn {% if book.reading_status == 'want_to_read' %}active{% endif %}"
@@ -300,23 +626,16 @@
                 </button>
             </div>
         </form>
-        
-        <div style="margin-top: 1rem;">
-            <button type="button" class="wishlist-toggle {% if book.is_wishlist %}active{% endif %}"
-                    onclick="toggleWishlist()" id="wishlistBtn">
-                <span id="wishlistIcon">
-                    <ion-icon name="{% if book.is_wishlist %}star{% else %}star-outline{% endif %}"></ion-icon>
-                </span>
-                <span id="wishlistText">{% if book.is_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
-            </button>
-        </div>
     </div>
 
     <!-- Notes -->
     <div class="detail-section">
-        <h2 class="section-title">My Notes</h2>
+        <h2 class="section-title">
+            <ion-icon name="create-outline"></ion-icon>
+            My Notes
+        </h2>
         <form method="POST" action="/api/books/{{ book.id }}" id="notesForm">
-            <textarea class="notes-textarea" name="notes" id="notes" 
+            <textarea class="notes-textarea" name="notes" id="notes"
                       placeholder="Add your personal notes about this book...">{{ book.notes or '' }}</textarea>
             <div class="btn-group">
                 <button type="button" class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
@@ -324,58 +643,19 @@
         </form>
     </div>
 
-    <!-- Description -->
-    {% if book.description %}
-    <div class="detail-section">
-        <h2 class="section-title">Description</h2>
-        <div class="book-description">{{ book.description }}</div>
-    </div>
-    {% endif %}
-
-    <!-- Series Information -->
-    <div class="detail-section">
-        <h2 class="section-title">Series Information</h2>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
-            Series information is automatically fetched from Google Books and Open Library when available.
-            You can also manually edit it below.
-        </p>
-        <form method="POST" id="seriesForm">
-            <div class="form-group">
-                <label for="series_name">Series Name</label>
-                <input type="text" class="form-input" name="series_name" id="series_name"
-                       value="{{ book.series_name or '' }}" placeholder="e.g., The Vampire Chronicles">
-            </div>
-            <div class="form-group">
-                <label for="series_position">Position in Series</label>
-                <input type="text" class="form-input" name="series_position" id="series_position"
-                       value="{{ book.series_position or '' }}" placeholder="e.g., 1 or 1.5">
-            </div>
-            <div class="btn-group">
-                <button type="button" class="btn btn-primary" onclick="saveSeries()">Save Series Info</button>
-                <button type="button" class="btn btn-secondary" onclick="refreshMetadata()">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    Refresh from APIs
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Categories -->
-    {% if book.categories %}
-    <div class="detail-section">
-        <h2 class="section-title">Categories</h2>
-        <div class="book-categories">
-            {% for category in book.categories.split(',') %}
-            <span class="category-badge">{{ category.strip() }}</span>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Delete -->
     <div class="detail-section">
-        <h2 class="section-title">Danger Zone</h2>
-        <button type="button" class="btn btn-danger" onclick="deleteBook()">Delete Book</button>
+        <h2 class="section-title">
+            <ion-icon name="warning-outline"></ion-icon>
+            Danger Zone
+        </h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Deleting this book will permanently remove it from your library. This action cannot be undone.
+        </p>
+        <button type="button" class="btn btn-danger" onclick="deleteBook()">
+            <ion-icon name="trash-outline"></ion-icon>
+            Delete Book
+        </button>
     </div>
 </div>
 {% endblock %}
