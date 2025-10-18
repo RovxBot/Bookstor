@@ -188,6 +188,8 @@
         scroll-behavior: smooth;
         padding-bottom: 1rem;
         -webkit-overflow-scrolling: touch;
+        position: relative;
+        z-index: 1;
     }
 
     .books-row::-webkit-scrollbar {
@@ -663,17 +665,19 @@
 
 {% block extra_js %}
 <script>
-    // Smooth scroll for horizontal rows
+    // Smooth scroll for horizontal rows - each row independently
     document.querySelectorAll('.books-row').forEach(row => {
         let isDown = false;
         let startX;
         let scrollLeft;
 
         row.addEventListener('mousedown', (e) => {
+            // Only handle if clicking directly on the row or book cards
             isDown = true;
             row.style.cursor = 'grabbing';
             startX = e.pageX - row.offsetLeft;
             scrollLeft = row.scrollLeft;
+            e.stopPropagation(); // Prevent affecting other rows
         });
 
         row.addEventListener('mouseleave', () => {
@@ -681,14 +685,16 @@
             row.style.cursor = 'grab';
         });
 
-        row.addEventListener('mouseup', () => {
+        row.addEventListener('mouseup', (e) => {
             isDown = false;
             row.style.cursor = 'grab';
+            e.stopPropagation(); // Prevent affecting other rows
         });
 
         row.addEventListener('mousemove', (e) => {
             if (!isDown) return;
             e.preventDefault();
+            e.stopPropagation(); // Prevent affecting other rows
             const x = e.pageX - row.offsetLeft;
             const walk = (x - startX) * 2;
             row.scrollLeft = scrollLeft - walk;
