@@ -30,7 +30,7 @@ init_db_with_retry()
 app = FastAPI(
     title="Bookstor API",
     description="Personal library management system with barcode scanning",
-    version="beta-v0.0.2"
+    version="v0.0.4"
 )
 
 # Configure CORS for mobile app
@@ -71,7 +71,7 @@ def root():
     """Root endpoint"""
     return {
         "message": "Welcome to Bookstor API",
-        "version": "beta-v0.0.2",
+        "version": "v0.0.4",
         "docs": "/docs",
         "app": "/app/login",
         "admin": "/admin/login"
