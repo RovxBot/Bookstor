@@ -345,10 +345,23 @@
             font-size: 2rem;
         }
 
-        /* Show FAB only on mobile and in WebView */
+        /* Show FAB on mobile (WebView) and on web browsers */
         @media (max-width: 768px) {
-            body.is-webview .fab-scanner {
+            .fab-scanner {
                 display: flex;
+            }
+        }
+
+        /* Also show on desktop when hovering over the page (for webcam scanning) */
+        @media (min-width: 769px) {
+            .fab-scanner {
+                display: flex;
+                opacity: 0.7;
+            }
+
+            .fab-scanner:hover {
+                opacity: 1;
+                transform: scale(1.1);
             }
         }
 
@@ -468,8 +481,8 @@
         </div>
     </nav>
 
-    <!-- Floating Action Button for Scanner (WebView only) -->
-    <button class="fab-scanner pulse" onclick="window.openScanner()" title="Scan Barcode">
+    <!-- Floating Action Button for Scanner (Mobile & Webcam) -->
+    <button class="fab-scanner pulse" onclick="window.openScanner()" title="Scan Barcode (Mobile Camera or Webcam)">
         <ion-icon name="barcode-outline"></ion-icon>
     </button>
 
@@ -559,11 +572,18 @@
             }
         };
 
-        // Function to open native scanner
+        // Function to open native scanner or webcam scanner
         window.openScanner = function() {
-            window.sendToNative({
-                type: 'OPEN_SCANNER'
-            });
+            // Check if we're in React Native WebView
+            if (window.ReactNativeWebView) {
+                // Use native scanner
+                window.sendToNative({
+                    type: 'OPEN_SCANNER'
+                });
+            } else {
+                // Use webcam scanner for web browsers
+                window.openWebcamScanner();
+            }
         };
 
         // Function to handle scanned ISBN from native scanner
@@ -593,7 +613,7 @@
             document.body.appendChild(loadingDiv);
 
             // Add book via API
-            fetch('/api/isbn/', {
+            fetch('/api/books/isbn/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -708,6 +728,198 @@
         document.addEventListener('message', function(event) {
             window.dispatchEvent(new MessageEvent('message', { data: event.data }));
         });
+
+        // ============================================================================
+        // Webcam Barcode Scanner (for web browsers)
+        // ============================================================================
+
+        window.openWebcamScanner = function() {
+            // Create scanner modal
+            const modal = document.createElement('div');
+            modal.id = 'webcam-scanner-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.95);
+                z-index: 10000;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            `;
+
+            modal.innerHTML = `
+                <div style="width: 100%; max-width: 640px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: white; margin: 0;">Scan Barcode</h2>
+                        <button onclick="window.closeWebcamScanner()" style="background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                            Close
+                        </button>
+                    </div>
+                    <div id="scanner-container" style="position: relative; width: 100%; background: #000; border-radius: 10px; overflow: hidden;">
+                        <video id="scanner-video" style="width: 100%; height: auto; display: block;"></video>
+                        <div id="scanner-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 200px; border: 2px solid #00ff00; border-radius: 10px; pointer-events: none;"></div>
+                    </div>
+                    <div id="scanner-status" style="color: white; text-align: center; margin-top: 20px; font-size: 16px;">
+                        Initialising camera...
+                    </div>
+                    <div id="scanner-result" style="color: #00ff00; text-align: center; margin-top: 10px; font-size: 18px; font-weight: bold;"></div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Start scanning
+            window.startWebcamScanning();
+        };
+
+        window.closeWebcamScanner = function() {
+            // Stop video stream
+            if (window.scannerStream) {
+                window.scannerStream.getTracks().forEach(track => track.stop());
+                window.scannerStream = null;
+            }
+
+            // Stop scanning loop
+            if (window.scannerAnimationFrame) {
+                cancelAnimationFrame(window.scannerAnimationFrame);
+                window.scannerAnimationFrame = null;
+            }
+
+            // Remove modal
+            const modal = document.getElementById('webcam-scanner-modal');
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+        };
+
+        window.startWebcamScanning = async function() {
+            const video = document.getElementById('scanner-video');
+            const statusDiv = document.getElementById('scanner-status');
+            const resultDiv = document.getElementById('scanner-result');
+
+            try {
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // Use back camera on mobile
+                });
+
+                window.scannerStream = stream;
+                video.srcObject = stream;
+                video.play();
+
+                statusDiv.textContent = 'Position barcode in the frame';
+
+                // Load barcode detection library dynamically
+                if (!window.BarcodeDetector) {
+                    // Use ZXing library as fallback
+                    await window.loadZXingLibrary();
+                } else {
+                    // Use native Barcode Detection API
+                    window.barcodeDetector = new BarcodeDetector({
+                        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+                    });
+                }
+
+                // Start scanning loop
+                window.scanBarcodeFromVideo(video, statusDiv, resultDiv);
+
+            } catch (error) {
+                console.error('Camera access error:', error);
+                statusDiv.textContent = 'Camera access denied. Please enable camera permissions.';
+                statusDiv.style.color = '#ff4444';
+            }
+        };
+
+        window.scanBarcodeFromVideo = async function(video, statusDiv, resultDiv) {
+            if (!video.videoWidth || !video.videoHeight) {
+                // Video not ready yet
+                window.scannerAnimationFrame = requestAnimationFrame(() =>
+                    window.scanBarcodeFromVideo(video, statusDiv, resultDiv)
+                );
+                return;
+            }
+
+            try {
+                let barcodes = [];
+
+                if (window.barcodeDetector) {
+                    // Use native Barcode Detection API
+                    barcodes = await window.barcodeDetector.detect(video);
+                } else if (window.ZXing) {
+                    // Use ZXing library
+                    barcodes = await window.scanWithZXing(video);
+                }
+
+                if (barcodes && barcodes.length > 0) {
+                    const barcode = barcodes[0];
+                    const isbn = barcode.rawValue || barcode;
+
+                    resultDiv.textContent = `Found: ${isbn}`;
+                    statusDiv.textContent = 'Barcode detected!';
+                    statusDiv.style.color = '#00ff00';
+
+                    // Wait a moment to show the result
+                    setTimeout(() => {
+                        window.closeWebcamScanner();
+
+                        // Ask user what to do with the scanned book
+                        const addToWishlist = confirm(`ISBN: ${isbn}\\n\\nAdd to Wishlist?\\n(Cancel to add to Library)`);
+                        window.handleScannedISBN(isbn, addToWishlist);
+                    }, 500);
+
+                    return;
+                }
+            } catch (error) {
+                console.error('Barcode detection error:', error);
+            }
+
+            // Continue scanning
+            window.scannerAnimationFrame = requestAnimationFrame(() =>
+                window.scanBarcodeFromVideo(video, statusDiv, resultDiv)
+            );
+        };
+
+        // Load ZXing library as fallback for browsers without native Barcode Detection API
+        window.loadZXingLibrary = function() {
+            return new Promise((resolve, reject) => {
+                if (window.ZXing) {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@zxing/library@latest/umd/index.min.js';
+                script.onload = () => {
+                    console.log('ZXing library loaded');
+                    window.ZXing = window.ZXing || {};
+                    resolve();
+                };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        };
+
+        window.scanWithZXing = async function(video) {
+            if (!window.zxingReader) {
+                const { BrowserMultiFormatReader } = window.ZXing;
+                window.zxingReader = new BrowserMultiFormatReader();
+            }
+
+            try {
+                const result = await window.zxingReader.decodeFromVideoElement(video);
+                if (result) {
+                    return [{ rawValue: result.text }];
+                }
+            } catch (error) {
+                // No barcode found in this frame
+            }
+
+            return [];
+        };
 
         // Initialize on page load
         detectEnvironment();
