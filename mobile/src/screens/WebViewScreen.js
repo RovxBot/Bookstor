@@ -46,7 +46,9 @@ export default function WebViewScreen({ navigation }) {
     try {
       const url = await AsyncStorage.getItem('serverUrl');
       if (url) {
-        setServerUrl(url);
+        // Remove /api suffix if present (WebView needs base URL)
+        const baseUrl = url.replace(/\/api\/?$/, '');
+        setServerUrl(baseUrl);
       } else {
         Alert.alert('Error', 'Server URL not configured');
         navigation.navigate('Login');
