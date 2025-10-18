@@ -38,7 +38,10 @@ def require_user(request: Request, db: Session = Depends(get_db)) -> models.User
     """Require a logged-in user, redirect to login if not authenticated"""
     user = get_current_user(request, db)
     if not user:
-        raise HTTPException(status_code=303, headers={"Location": "/app/login"})
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated. Please log in."
+        )
     return user
 
 
@@ -123,14 +126,17 @@ async def app_root(request: Request, db: Session = Depends(get_db)):
 @router.get("/app/library", response_class=HTMLResponse)
 async def library_page(request: Request, db: Session = Depends(get_db)):
     """Library page - shows all owned books"""
-    user = require_user(request, db)
+    # Check if user is authenticated, redirect to login if not
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/app/login", status_code=303)
 
     # Get books for this user (not wishlist)
     books = db.query(models.Book).filter(
         models.Book.user_id == user.id,
         models.Book.is_wishlist == False
     ).order_by(models.Book.added_at.desc()).all()
-    
+
     return templates.TemplateResponse("user/library.html", {
         "request": request,
         "user": user,
