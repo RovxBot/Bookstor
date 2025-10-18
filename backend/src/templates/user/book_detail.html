@@ -370,6 +370,21 @@
         box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
     }
 
+    select.form-input {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding-right: 2.5rem;
+    }
+
+    textarea.form-input {
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
         .book-hero {
@@ -524,73 +539,167 @@
 <div class="book-detail-content">
     <!-- Book Information Grid -->
     <div class="detail-section">
-        <h2 class="section-title">
-            <ion-icon name="information-circle-outline"></ion-icon>
-            Book Information
-        </h2>
-        <div class="info-grid">
-            {% if book.isbn %}
-            <div class="info-item">
-                <div class="info-label">ISBN</div>
-                <div class="info-value">{{ book.isbn }}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="section-title" style="margin: 0;">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                Book Information
+            </h2>
+            <button type="button" class="btn btn-secondary" onclick="toggleEditMode()" id="editToggleBtn">
+                <ion-icon name="create-outline"></ion-icon>
+                Edit
+            </button>
+        </div>
+
+        <!-- View Mode -->
+        <div id="viewMode">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Title</div>
+                    <div class="info-value">{{ book.title }}</div>
+                </div>
+                {% if book.subtitle %}
+                <div class="info-item">
+                    <div class="info-label">Subtitle</div>
+                    <div class="info-value">{{ book.subtitle }}</div>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <div class="info-label">Author(s)</div>
+                    <div class="info-value">{{ book.authors }}</div>
+                </div>
+                {% if book.isbn %}
+                <div class="info-item">
+                    <div class="info-label">ISBN</div>
+                    <div class="info-value">{{ book.isbn }}</div>
+                </div>
+                {% endif %}
+                {% if book.publisher %}
+                <div class="info-item">
+                    <div class="info-label">Publisher</div>
+                    <div class="info-value">{{ book.publisher }}</div>
+                </div>
+                {% endif %}
+                {% if book.published_date %}
+                <div class="info-item">
+                    <div class="info-label">Published</div>
+                    <div class="info-value">{{ book.published_date }}</div>
+                </div>
+                {% endif %}
+                {% if book.page_count %}
+                <div class="info-item">
+                    <div class="info-label">Pages</div>
+                    <div class="info-value">{{ book.page_count }}</div>
+                </div>
+                {% endif %}
+                {% if book.book_format %}
+                <div class="info-item">
+                    <div class="info-label">Format</div>
+                    <div class="info-value">{{ book.book_format }}</div>
+                </div>
+                {% endif %}
+                {% if book.edition %}
+                <div class="info-item">
+                    <div class="info-label">Edition</div>
+                    <div class="info-value">{{ book.edition }}</div>
+                </div>
+                {% endif %}
+                {% if book.series_name %}
+                <div class="info-item">
+                    <div class="info-label">Series</div>
+                    <div class="info-value">
+                        {{ book.series_name }}
+                        {% if book.series_position %} #{{ book.series_position }}{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if book.added_at %}
+                <div class="info-item">
+                    <div class="info-label">Added to Library</div>
+                    <div class="info-value">{{ book.added_at.strftime('%B %d, %Y') }}</div>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-            {% if book.publisher %}
-            <div class="info-item">
-                <div class="info-label">Publisher</div>
-                <div class="info-value">{{ book.publisher }}</div>
-            </div>
-            {% endif %}
-            {% if book.published_date %}
-            <div class="info-item">
-                <div class="info-label">Published</div>
-                <div class="info-value">{{ book.published_date }}</div>
-            </div>
-            {% endif %}
-            {% if book.page_count %}
-            <div class="info-item">
-                <div class="info-label">Pages</div>
-                <div class="info-value">{{ book.page_count }}</div>
-            </div>
-            {% endif %}
-            {% if book.book_format %}
-            <div class="info-item">
-                <div class="info-label">Format</div>
-                <div class="info-value">{{ book.book_format }}</div>
-            </div>
-            {% endif %}
-            {% if book.edition %}
-            <div class="info-item">
-                <div class="info-label">Edition</div>
-                <div class="info-value">{{ book.edition }}</div>
-            </div>
-            {% endif %}
-            {% if book.series_name %}
-            <div class="info-item">
-                <div class="info-label">Series</div>
-                <div class="info-value">
-                    {{ book.series_name }}
-                    {% if book.series_position %} #{{ book.series_position }}{% endif %}
+            {% if book.categories %}
+            <div style="margin-top: 1.5rem;">
+                <div class="info-label" style="margin-bottom: 0.75rem;">Categories</div>
+                <div class="book-categories">
+                    {% for category in book.categories.split(',') %}
+                    <span class="category-badge">{{ category.strip() }}</span>
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}
-            {% if book.added_at %}
-            <div class="info-item">
-                <div class="info-label">Added to Library</div>
-                <div class="info-value">{{ book.added_at.strftime('%B %d, %Y') }}</div>
-            </div>
-            {% endif %}
         </div>
-        {% if book.categories %}
-        <div style="margin-top: 1.5rem;">
-            <div class="info-label" style="margin-bottom: 0.75rem;">Categories</div>
-            <div class="book-categories">
-                {% for category in book.categories.split(',') %}
-                <span class="category-badge">{{ category.strip() }}</span>
-                {% endfor %}
-            </div>
+
+        <!-- Edit Mode -->
+        <div id="editMode" style="display: none;">
+            <form id="bookInfoForm">
+                <div class="form-group">
+                    <label for="edit_title">Title</label>
+                    <input type="text" class="form-input" id="edit_title" name="title" value="{{ book.title }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_subtitle">Subtitle</label>
+                    <input type="text" class="form-input" id="edit_subtitle" name="subtitle" value="{{ book.subtitle or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_authors">Author(s)</label>
+                    <input type="text" class="form-input" id="edit_authors" name="authors" value="{{ book.authors }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_publisher">Publisher</label>
+                    <input type="text" class="form-input" id="edit_publisher" name="publisher" value="{{ book.publisher or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_published_date">Published Date</label>
+                    <input type="text" class="form-input" id="edit_published_date" name="published_date" value="{{ book.published_date or '' }}" placeholder="YYYY-MM-DD or YYYY">
+                </div>
+                <div class="form-group">
+                    <label for="edit_page_count">Page Count</label>
+                    <input type="number" class="form-input" id="edit_page_count" name="page_count" value="{{ book.page_count or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_book_format">Format</label>
+                    <select class="form-input" id="edit_book_format" name="book_format">
+                        <option value="">Select format</option>
+                        <option value="Paperback" {% if book.book_format == 'Paperback' %}selected{% endif %}>Paperback</option>
+                        <option value="Hardcover" {% if book.book_format == 'Hardcover' %}selected{% endif %}>Hardcover</option>
+                        <option value="eBook" {% if book.book_format == 'eBook' %}selected{% endif %}>eBook</option>
+                        <option value="Audiobook" {% if book.book_format == 'Audiobook' %}selected{% endif %}>Audiobook</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit_edition">Edition</label>
+                    <input type="text" class="form-input" id="edit_edition" name="edition" value="{{ book.edition or '' }}" placeholder="e.g., 1st Edition, Revised">
+                </div>
+                <div class="form-group">
+                    <label for="edit_series_name">Series Name</label>
+                    <input type="text" class="form-input" id="edit_series_name" name="series_name" value="{{ book.series_name or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit_series_position">Series Position</label>
+                    <input type="text" class="form-input" id="edit_series_position" name="series_position" value="{{ book.series_position or '' }}" placeholder="e.g., 1 or 1.5">
+                </div>
+                <div class="form-group">
+                    <label for="edit_categories">Categories (comma-separated)</label>
+                    <input type="text" class="form-input" id="edit_categories" name="categories" value="{{ book.categories or '' }}" placeholder="Fiction, Fantasy, Adventure">
+                </div>
+                <div class="form-group">
+                    <label for="edit_description">Description</label>
+                    <textarea class="form-input" id="edit_description" name="description" rows="6" placeholder="Book description...">{{ book.description or '' }}</textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="saveBookInfo()">
+                        <ion-icon name="save-outline"></ion-icon>
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">
+                        <ion-icon name="close-outline"></ion-icon>
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
-        {% endif %}
     </div>
 
     <!-- Description -->
@@ -725,6 +834,64 @@
         } catch (error) {
             console.error('Toggle wishlist error:', error);
             showNotification('Failed to update wishlist', 'error');
+        }
+    }
+
+    function toggleEditMode() {
+        const viewMode = document.getElementById('viewMode');
+        const editMode = document.getElementById('editMode');
+        const editBtn = document.getElementById('editToggleBtn');
+
+        if (editMode.style.display === 'none') {
+            // Switch to edit mode
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+            editBtn.innerHTML = '<ion-icon name="eye-outline"></ion-icon> View';
+        } else {
+            // Switch to view mode
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            editBtn.innerHTML = '<ion-icon name="create-outline"></ion-icon> Edit';
+        }
+    }
+
+    async function saveBookInfo() {
+        const form = document.getElementById('bookInfoForm');
+        const formData = new FormData(form);
+
+        // Convert FormData to JSON
+        const data = {};
+        for (const [key, value] of formData.entries()) {
+            if (value !== '') {
+                // Convert page_count to number if present
+                if (key === 'page_count' && value) {
+                    data[key] = parseInt(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+        }
+
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                showNotification('Book information updated!', 'success');
+                // Reload page to show updated data
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const errorData = await response.json();
+                console.error('Save book info error:', errorData);
+                showNotification('Failed to save: ' + (errorData.detail || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Save book info error:', error);
+            showNotification('Failed to save book information', 'error');
         }
     }
 
