@@ -189,7 +189,8 @@
         padding-bottom: 1rem;
         -webkit-overflow-scrolling: touch;
         position: relative;
-        z-index: 1;
+        /* Prevent trackpad horizontal scroll from affecting multiple rows */
+        overscroll-behavior-x: contain;
     }
 
     .books-row::-webkit-scrollbar {
@@ -665,41 +666,65 @@
 
 {% block extra_js %}
 <script>
-    // Smooth scroll for horizontal rows - each row independently
-    document.querySelectorAll('.books-row').forEach(row => {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
+    // Horizontal scroll for each row independently
+    const bookRows = document.querySelectorAll('.books-row');
+    const mainContent = document.querySelector('.main-content');
 
-        row.addEventListener('mousedown', (e) => {
-            // Only handle if clicking directly on the row or book cards
-            isDown = true;
-            row.style.cursor = 'grabbing';
-            startX = e.pageX - row.offsetLeft;
-            scrollLeft = row.scrollLeft;
-            e.stopPropagation(); // Prevent affecting other rows
+    // Track which row is currently hovered
+    let currentHoveredRow = null;
+
+    bookRows.forEach((scrollContainer, index) => {
+        // Mouse enter - mark this row as the active one
+        scrollContainer.addEventListener('mouseenter', () => {
+            currentHoveredRow = scrollContainer;
         });
 
-        row.addEventListener('mouseleave', () => {
-            isDown = false;
-            row.style.cursor = 'grab';
+        // Mouse leave - clear if this was the active row
+        scrollContainer.addEventListener('mouseleave', () => {
+            if (currentHoveredRow === scrollContainer) {
+                currentHoveredRow = null;
+            }
         });
 
-        row.addEventListener('mouseup', (e) => {
-            isDown = false;
-            row.style.cursor = 'grab';
-            e.stopPropagation(); // Prevent affecting other rows
-        });
+        // Touch support for mobile
+        let touchStartX = 0;
+        let scrollLeftStart = 0;
 
-        row.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            e.stopPropagation(); // Prevent affecting other rows
-            const x = e.pageX - row.offsetLeft;
-            const walk = (x - startX) * 2;
-            row.scrollLeft = scrollLeft - walk;
-        });
+        scrollContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            scrollLeftStart = scrollContainer.scrollLeft;
+        }, { passive: true });
+
+        scrollContainer.addEventListener('touchmove', (e) => {
+            const touchX = e.touches[0].clientX;
+            const deltaX = touchStartX - touchX;
+            scrollContainer.scrollLeft = scrollLeftStart + deltaX;
+        }, { passive: true });
     });
+
+    // Global wheel handler on main-content to intercept ALL scroll events
+    if (mainContent) {
+        mainContent.addEventListener('wheel', (e) => {
+            // Check if we have horizontal scroll (deltaX)
+            const hasHorizontalScroll = Math.abs(e.deltaX) > 0;
+
+            if (hasHorizontalScroll) {
+                // If hovering over a row, scroll only that row
+                if (currentHoveredRow !== null) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Multiply by 3 for more noticeable scrolling
+                    const scrollAmount = e.deltaX * 3;
+                    currentHoveredRow.scrollLeft += scrollAmount;
+                } else {
+                    // Not hovering over any row, prevent horizontal scroll entirely
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        }, { passive: false, capture: true });
+    }
 </script>
 {% endblock %}
 
