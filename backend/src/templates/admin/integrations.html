@@ -1,0 +1,404 @@
+{% extends "admin/base.html" %}
+
+{% block title %}API Integrations - Bookstor Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>API Integrations</h1>
+    <p>Manage external book API integrations and their API keys</p>
+</div>
+
+<div class="integrations-container">
+    <div class="integrations-header">
+        <button class="btn btn-primary" onclick="showAddIntegrationModal()">
+            <ion-icon name="add-circle"></ion-icon>
+            Add Integration
+        </button>
+    </div>
+
+    <div class="integrations-list">
+        {% if integrations %}
+            {% for integration in integrations %}
+            <div class="integration-card" data-integration-id="{{ integration.id }}">
+                <div class="integration-header">
+                    <div class="integration-info">
+                        <h3>{{ integration.display_name }}</h3>
+                        <span class="integration-name">{{ integration.name }}</span>
+                    </div>
+                    <div class="integration-status">
+                        <label class="toggle-switch">
+                            <input type="checkbox" 
+                                   {% if integration.is_enabled %}checked{% endif %}
+                                   onchange="toggleIntegration({{ integration.id }}, this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="status-label">
+                            {% if integration.is_enabled %}
+                                <span class="badge badge-success">Enabled</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Disabled</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="integration-body">
+                    {% if integration.description %}
+                    <p class="integration-description">{{ integration.description }}</p>
+                    {% endif %}
+
+                    <div class="integration-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Base URL:</span>
+                            <code>{{ integration.base_url or 'Not set' }}</code>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Priority:</span>
+                            <span class="priority-badge">{{ integration.priority }}</span>
+                            <span class="detail-hint">(Lower number = higher priority)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">API Key:</span>
+                            {% if integration.api_key %}
+                                <code class="api-key-masked">••••••••••••{{ integration.api_key[-4:] if integration.api_key|length > 4 else '••••' }}</code>
+                            {% else %}
+                                <span class="text-muted">{% if integration.requires_key %}Required but not set{% else %}Not required{% endif %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="integration-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="editIntegration({{ integration.id }})">
+                            <ion-icon name="create"></ion-icon>
+                            Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteIntegration({{ integration.id }}, '{{ integration.display_name }}')">
+                            <ion-icon name="trash"></ion-icon>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <ion-icon name="cloud-offline" style="font-size: 4rem; color: var(--text-secondary);"></ion-icon>
+                <h3>No API Integrations</h3>
+                <p>Add your first API integration to start fetching book metadata</p>
+                <button class="btn btn-primary" onclick="showAddIntegrationModal()">
+                    <ion-icon name="add-circle"></ion-icon>
+                    Add Integration
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Integration Modal -->
+<div id="integrationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add API Integration</h2>
+            <button class="modal-close" onclick="closeIntegrationModal()">
+                <ion-icon name="close"></ion-icon>
+            </button>
+        </div>
+        <form id="integrationForm" onsubmit="saveIntegration(event)">
+            <input type="hidden" id="integrationId" name="integration_id">
+            
+            <div class="form-group">
+                <label for="name">Integration Name *</label>
+                <input type="text" id="name" name="name" required 
+                       placeholder="e.g., google_books, open_library"
+                       pattern="[a-z_]+" 
+                       title="Lowercase letters and underscores only">
+                <small>Unique identifier (lowercase, underscores only)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="display_name">Display Name *</label>
+                <input type="text" id="display_name" name="display_name" required 
+                       placeholder="e.g., Google Books API">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" 
+                          placeholder="Brief description of this API"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="base_url">Base URL</label>
+                <input type="url" id="base_url" name="base_url" 
+                       placeholder="https://api.example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="api_key">API Key</label>
+                <input type="text" id="api_key" name="api_key" 
+                       placeholder="Enter API key if required">
+                <small>Leave blank if the API doesn't require a key</small>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priority *</label>
+                <input type="number" id="priority" name="priority" value="0" required min="0">
+                <small>Lower number = higher priority (0 is highest)</small>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="requires_key" name="requires_key">
+                    <span>This API requires an API key</span>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeIntegrationModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <ion-icon name="save"></ion-icon>
+                    Save Integration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Modal Override for Integrations Page */
+#integrationModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+#integrationModal[style*="display: flex"] {
+    display: flex !important;
+}
+
+/* Form Styling */
+#integrationForm .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#integrationForm label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+#integrationForm input[type="text"],
+#integrationForm input[type="url"],
+#integrationForm input[type="number"],
+#integrationForm textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 0.375rem;
+    background-color: var(--background);
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+#integrationForm input[type="text"]:focus,
+#integrationForm input[type="url"]:focus,
+#integrationForm input[type="number"]:focus,
+#integrationForm textarea:focus {
+    outline: none;
+    border-color: var(--primary-colour);
+}
+
+#integrationForm input[type="text"]::placeholder,
+#integrationForm input[type="url"]::placeholder,
+#integrationForm textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+#integrationForm small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+#integrationForm input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+.integrations-container {
+    max-width: 1200px;
+}
+
+.integrations-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.integrations-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.integration-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.integration-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
+
+.integration-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.25rem;
+}
+
+.integration-name {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    background: var(--surface);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.integration-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary-colour);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.integration-body {
+    padding: 1.5rem;
+}
+
+.integration-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.integration-details {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.detail-hint {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.priority-badge {
+    background: var(--primary-colour);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.api-key-masked {
+    background: var(--background);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+}
+
+.integration-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state h3 {
+    margin: 1rem 0 0.5rem 0;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+</style>
+
+<script src="/static/admin-integrations.js"></script>
+{% endblock %}
+

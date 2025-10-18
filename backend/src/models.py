@@ -72,3 +72,19 @@ class AppSettings(Base):
     value = Column(String, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+class APIIntegration(Base):
+    __tablename__ = "api_integrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)  # e.g., "google_books", "open_library"
+    display_name = Column(String, nullable=False)  # e.g., "Google Books API"
+    description = Column(Text, nullable=True)
+    api_key = Column(String, nullable=True)  # Encrypted or plain API key
+    base_url = Column(String, nullable=True)  # API base URL
+    is_enabled = Column(Boolean, default=True)
+    priority = Column(Integer, default=0)  # Lower number = higher priority
+    requires_key = Column(Boolean, default=False)  # Whether this API requires an API key
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

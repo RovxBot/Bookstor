@@ -302,13 +302,33 @@ async def admin_settings_page(
     # Get all settings
     settings_list = db.query(models.AppSettings).all()
     settings_dict = {s.key: s.value for s in settings_list}
-    
+
     return templates.TemplateResponse(
         "admin/settings.html",
         {
             "request": request,
             "current_user": current_user,
             "settings": settings_dict
+        }
+    )
+
+
+@router.get("/integrations", response_class=HTMLResponse)
+async def admin_integrations_page(
+    request: Request,
+    current_user: models.User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """API Integrations management page"""
+    # Get all API integrations ordered by priority
+    integrations = db.query(models.APIIntegration).order_by(models.APIIntegration.priority).all()
+
+    return templates.TemplateResponse(
+        "admin/integrations.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "integrations": integrations
         }
     )
 
@@ -425,7 +445,7 @@ async def toggle_registration(
     setting = db.query(models.AppSettings).filter(
         models.AppSettings.key == "registration_enabled"
     ).first()
-    
+
     if setting:
         setting.value = "true" if enabled else "false"
     else:
@@ -434,8 +454,129 @@ async def toggle_registration(
             value="true" if enabled else "false"
         )
         db.add(setting)
-    
+
     db.commit()
-    
+
     return {"success": True, "enabled": enabled}
+
+
+# ============================================================================
+# API Integration Endpoints
+# ============================================================================
+
+@router.post("/api/integrations")
+async def create_integration(
+    name: str = Form(...),
+    display_name: str = Form(...),
+    description: Optional[str] = Form(None),
+    base_url: Optional[str] = Form(None),
+    api_key: Optional[str] = Form(None),
+    requires_key: bool = Form(False),
+    priority: int = Form(0),
+    current_user: models.User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new API integration"""
+    # Check if integration with this name already exists
+    existing = db.query(models.APIIntegration).filter(
+        models.APIIntegration.name == name
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Integration with this name already exists"
+        )
+
+    integration = models.APIIntegration(
+        name=name,
+        display_name=display_name,
+        description=description,
+        base_url=base_url,
+        api_key=api_key,
+        requires_key=requires_key,
+        priority=priority,
+        is_enabled=True
+    )
+
+    db.add(integration)
+    db.commit()
+    db.refresh(integration)
+
+    return {"success": True, "integration": {
+        "id": integration.id,
+        "name": integration.name,
+        "display_name": integration.display_name
+    }}
+
+
+@router.patch("/api/integrations/{integration_id}")
+async def update_integration(
+    integration_id: int,
+    display_name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    base_url: Optional[str] = Form(None),
+    api_key: Optional[str] = Form(None),
+    priority: Optional[int] = Form(None),
+    is_enabled: Optional[bool] = Form(None),
+    current_user: models.User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update an API integration"""
+    integration = db.query(models.APIIntegration).filter(
+        models.APIIntegration.id == integration_id
+    ).first()
+
+    if not integration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Integration not found"
+        )
+
+    # Update fields if provided
+    if display_name is not None:
+        integration.display_name = display_name
+    if description is not None:
+        integration.description = description
+    if base_url is not None:
+        integration.base_url = base_url
+    if api_key is not None:
+        integration.api_key = api_key
+    if priority is not None:
+        integration.priority = priority
+    if is_enabled is not None:
+        integration.is_enabled = is_enabled
+
+    db.commit()
+    db.refresh(integration)
+
+    return {"success": True, "integration": {
+        "id": integration.id,
+        "name": integration.name,
+        "display_name": integration.display_name,
+        "is_enabled": integration.is_enabled
+    }}
+
+
+@router.delete("/api/integrations/{integration_id}")
+async def delete_integration(
+    integration_id: int,
+    current_user: models.User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an API integration"""
+    integration = db.query(models.APIIntegration).filter(
+        models.APIIntegration.id == integration_id
+    ).first()
+
+    if not integration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Integration not found"
+        )
+
+    db.delete(integration)
+    db.commit()
+
+    return {"success": True}
 
