@@ -4,100 +4,244 @@
 
 {% block extra_css %}
 <style>
-    .filter-bar {
-        background-color: var(--surface);
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid var(--border);
+    /* Netflix-inspired Hero Section */
+    .library-hero {
+        position: relative;
+        height: 70vh;
+        min-height: 500px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, var(--background) 100%);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .hero-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(8px);
+        transform: scale(1.1);
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%),
+                    linear-gradient(to top, var(--background) 0%, transparent 50%);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    .hero-cover {
+        width: 300px;
+        height: 450px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .hero-info {
+        flex: 1;
+        color: white;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        background: var(--primary-colour);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        line-height: 1.1;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .hero-author {
+        font-size: 1.5rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-meta {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .hero-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .hero-description {
+        font-size: 1.125rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        max-width: 700px;
+        opacity: 0.9;
+    }
+
+    .hero-actions {
         display: flex;
         gap: 1rem;
-        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 1rem 2rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        display: flex;
         align-items: center;
-    }
-
-    @media (max-width: 768px) {
-        .filter-bar {
-            padding: 1rem;
-            gap: 0.5rem;
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .filter-bar::-webkit-scrollbar {
-            display: none;
-        }
-    }
-
-    /* Filter buttons use theme.css styles */
-
-    .books-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 2rem;
-        padding: 2rem;
-    }
-
-    /* Mobile: 2 columns */
-    @media (max-width: 768px) {
-        .books-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            padding: 1rem;
-        }
-    }
-
-    /* Very small screens: 1 column */
-    @media (max-width: 400px) {
-        .books-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .book-card {
-        background-color: var(--surface);
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        box-shadow: var(--shadow);
+        gap: 0.75rem;
         transition: all 0.3s;
+        text-decoration: none;
+    }
+
+    .hero-btn-primary {
+        background: white;
+        color: black;
+    }
+
+    .hero-btn-primary:hover {
+        background: rgba(255,255,255,0.8);
+        transform: scale(1.05);
+    }
+
+    .hero-btn-secondary {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .hero-btn-secondary:hover {
+        background: rgba(255,255,255,0.3);
+    }
+
+    /* Netflix-style Rows */
+    .library-section {
+        margin-bottom: 3rem;
+        padding: 0 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .section-view-all {
+        color: var(--primary-colour);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: opacity 0.3s;
+    }
+
+    .section-view-all:hover {
+        opacity: 0.8;
+    }
+
+    /* Horizontal Scrolling Container */
+    .books-row {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        padding-bottom: 1rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .books-row::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .books-row::-webkit-scrollbar-track {
+        background: var(--surface);
+        border-radius: 4px;
+    }
+
+    .books-row::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+    }
+
+    .books-row::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    /* Netflix-style Book Card */
+    .book-card {
+        flex: 0 0 200px;
+        background-color: var(--surface);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         text-decoration: none;
         color: inherit;
-        display: flex;
-        flex-direction: column;
+        position: relative;
     }
 
     .book-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
+        transform: scale(1.05);
+        z-index: 10;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    /* Disable hover effect on touch devices */
-    @media (hover: none) {
-        .book-card:hover {
-            transform: none;
-        }
-        .book-card:active {
-            transform: scale(0.98);
-        }
+    .book-card:hover .book-card-overlay {
+        opacity: 1;
     }
 
     .book-cover {
         width: 100%;
-        height: 280px;
+        height: 300px;
         object-fit: cover;
         background-color: var(--background);
-    }
-
-    /* Smaller cover on mobile */
-    @media (max-width: 768px) {
-        .book-cover {
-            height: 220px;
-        }
+        display: block;
     }
 
     .book-cover-placeholder {
         width: 100%;
-        height: 280px;
+        height: 300px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
         align-items: center;
@@ -105,79 +249,165 @@
         font-size: 4rem;
     }
 
-    @media (max-width: 768px) {
-        .book-cover-placeholder {
-            height: 220px;
-            font-size: 3rem;
-        }
+    /* Hover Overlay */
+    .book-card-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+        padding: 1.5rem 1rem 1rem;
+        opacity: 0;
+        transition: opacity 0.3s;
     }
 
-    .book-info {
-        padding: 1rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .book-title {
-        font-size: 1rem;
+    .book-card-title {
+        font-size: 0.9rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
+        color: white;
+        margin-bottom: 0.25rem;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .book-authors {
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        margin-bottom: 0.75rem;
+    .book-card-author {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.8);
+        margin-bottom: 0.5rem;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .book-status {
-        margin-top: auto;
-        padding: 0.375rem 0.75rem;
-        border-radius: 1rem;
+    .book-card-meta {
+        display: flex;
+        gap: 0.75rem;
         font-size: 0.75rem;
+        color: rgba(255,255,255,0.7);
+    }
+
+    .book-card-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Status Badge on Card */
+    .book-card-status {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
         font-weight: 600;
-        text-align: center;
+        backdrop-filter: blur(10px);
     }
 
     .status-want_to_read {
-        background-color: #dbeafe;
-        color: #1e40af;
+        background-color: rgba(59, 130, 246, 0.9);
+        color: white;
     }
 
     .status-currently_reading {
-        background-color: #d1fae5;
-        color: #065f46;
+        background-color: rgba(34, 197, 94, 0.9);
+        color: white;
     }
 
     .status-read {
-        background-color: #e0e7ff;
-        color: #4338ca;
+        background-color: rgba(139, 92, 246, 0.9);
+        color: white;
     }
 
-    /* Dark mode status badges */
-    [data-theme="dark"] .status-want_to_read {
-        background-color: rgba(59, 130, 246, 0.2);
-        color: #93c5fd;
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .library-hero {
+            height: 50vh;
+            min-height: 400px;
+        }
+
+        .hero-content {
+            flex-direction: column;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        .hero-cover {
+            width: 200px;
+            height: 300px;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .hero-author {
+            font-size: 1.125rem;
+        }
+
+        .hero-description {
+            font-size: 1rem;
+            max-width: 100%;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .hero-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .library-section {
+            padding: 0 1rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+        }
+
+        .book-card {
+            flex: 0 0 150px;
+        }
+
+        .book-cover {
+            height: 225px;
+        }
+
+        .book-cover-placeholder {
+            height: 225px;
+            font-size: 3rem;
+        }
     }
 
-    [data-theme="dark"] .status-currently_reading {
-        background-color: rgba(34, 197, 94, 0.2);
-        color: #86efac;
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
     }
 
-    [data-theme="dark"] .status-read {
-        background-color: rgba(139, 92, 246, 0.2);
-        color: #c4b5fd;
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .empty-state-text {
+        font-size: 1rem;
+        margin-bottom: 2rem;
     }
 
     .empty-state {
@@ -230,52 +460,202 @@
 {% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <h1>My Library</h1>
-    <p>{{ books|length }} books in your collection</p>
-</div>
-
-<div class="filter-bar">
-    <button class="filter-btn active" onclick="filterBooks('all')">All Books</button>
-    <button class="filter-btn" onclick="filterBooks('want_to_read')">Want to Read</button>
-    <button class="filter-btn" onclick="filterBooks('currently_reading')">Currently Reading</button>
-    <button class="filter-btn" onclick="filterBooks('read')">Read</button>
-</div>
-
 {% if books %}
-<div class="books-grid" id="booksGrid">
-    {% for book in books %}
-    <a href="/app/book/{{ book.id }}" class="book-card" data-status="{{ book.reading_status }}">
-        {% if book.thumbnail %}
-        <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-        {% else %}
-        <div class="book-cover-placeholder">📚</div>
+    {% set currently_reading = books | selectattr('reading_status', 'equalto', 'currently_reading') | list %}
+    {% set want_to_read = books | selectattr('reading_status', 'equalto', 'want_to_read') | list %}
+    {% set read_books = books | selectattr('reading_status', 'equalto', 'read') | list %}
+
+    <!-- Hero Section with Featured Book -->
+    {% if currently_reading %}
+    {% set featured = currently_reading[0] %}
+    <div class="library-hero">
+        {% if featured.thumbnail %}
+        <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-background">
         {% endif %}
-        
-        <div class="book-info">
-            <div class="book-title">{{ book.title }}</div>
-            {% if book.authors %}
-            <div class="book-authors">{{ book.authors }}</div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            {% if featured.thumbnail %}
+            <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-cover">
+            {% else %}
+            <div class="hero-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 6rem;">📚</div>
             {% endif %}
-            
-            <div class="book-status status-{{ book.reading_status }}">
-                {% if book.reading_status == 'want_to_read' %}
-                    Want to Read
-                {% elif book.reading_status == 'currently_reading' %}
-                    Currently Reading
-                {% elif book.reading_status == 'read' %}
-                    Read
+            <div class="hero-info">
+                <div class="hero-badge">Currently Reading</div>
+                <h1 class="hero-title">{{ featured.title }}</h1>
+                {% if featured.authors %}
+                <div class="hero-author">by {{ featured.authors }}</div>
                 {% endif %}
+                <div class="hero-meta">
+                    {% if featured.published_date %}
+                    <div class="hero-meta-item">
+                        <ion-icon name="calendar-outline"></ion-icon>
+                        {{ featured.published_date[:4] }}
+                    </div>
+                    {% endif %}
+                    {% if featured.page_count %}
+                    <div class="hero-meta-item">
+                        <ion-icon name="document-text-outline"></ion-icon>
+                        {{ featured.page_count }} pages
+                    </div>
+                    {% endif %}
+                    {% if featured.book_format %}
+                    <div class="hero-meta-item">
+                        <ion-icon name="albums-outline"></ion-icon>
+                        {{ featured.book_format }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if featured.description %}
+                <div class="hero-description">
+                    {{ featured.description[:300] }}{% if featured.description|length > 300 %}...{% endif %}
+                </div>
+                {% endif %}
+                <div class="hero-actions">
+                    <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-primary">
+                        <ion-icon name="book-outline"></ion-icon>
+                        View Details
+                    </a>
+                    <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-secondary">
+                        <ion-icon name="information-circle-outline"></ion-icon>
+                        More Info
+                    </a>
+                </div>
             </div>
         </div>
-    </a>
-    {% endfor %}
-</div>
+    </div>
+    {% endif %}
+
+    <!-- Currently Reading Section -->
+    {% if currently_reading %}
+    <div class="library-section">
+        <div class="section-header">
+            <h2 class="section-title">Continue Reading</h2>
+            <span class="section-view-all">{{ currently_reading|length }} book{% if currently_reading|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="books-row">
+            {% for book in currently_reading %}
+            <a href="/app/book/{{ book.id }}" class="book-card">
+                {% if book.thumbnail %}
+                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                {% else %}
+                <div class="book-cover-placeholder">📚</div>
+                {% endif %}
+                <div class="book-card-status status-currently_reading">Reading</div>
+                <div class="book-card-overlay">
+                    <div class="book-card-title">{{ book.title }}</div>
+                    {% if book.authors %}
+                    <div class="book-card-author">{{ book.authors }}</div>
+                    {% endif %}
+                    <div class="book-card-meta">
+                        {% if book.page_count %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="document-text-outline"></ion-icon>
+                            {{ book.page_count }}p
+                        </div>
+                        {% endif %}
+                        {% if book.book_format %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="albums-outline"></ion-icon>
+                            {{ book.book_format }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Want to Read Section -->
+    {% if want_to_read %}
+    <div class="library-section">
+        <div class="section-header">
+            <h2 class="section-title">Want to Read</h2>
+            <span class="section-view-all">{{ want_to_read|length }} book{% if want_to_read|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="books-row">
+            {% for book in want_to_read %}
+            <a href="/app/book/{{ book.id }}" class="book-card">
+                {% if book.thumbnail %}
+                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                {% else %}
+                <div class="book-cover-placeholder">📚</div>
+                {% endif %}
+                <div class="book-card-status status-want_to_read">Want to Read</div>
+                <div class="book-card-overlay">
+                    <div class="book-card-title">{{ book.title }}</div>
+                    {% if book.authors %}
+                    <div class="book-card-author">{{ book.authors }}</div>
+                    {% endif %}
+                    <div class="book-card-meta">
+                        {% if book.page_count %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="document-text-outline"></ion-icon>
+                            {{ book.page_count }}p
+                        </div>
+                        {% endif %}
+                        {% if book.book_format %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="albums-outline"></ion-icon>
+                            {{ book.book_format }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Read Books Section -->
+    {% if read_books %}
+    <div class="library-section">
+        <div class="section-header">
+            <h2 class="section-title">Finished Reading</h2>
+            <span class="section-view-all">{{ read_books|length }} book{% if read_books|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="books-row">
+            {% for book in read_books %}
+            <a href="/app/book/{{ book.id }}" class="book-card">
+                {% if book.thumbnail %}
+                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                {% else %}
+                <div class="book-cover-placeholder">📚</div>
+                {% endif %}
+                <div class="book-card-status status-read">Read</div>
+                <div class="book-card-overlay">
+                    <div class="book-card-title">{{ book.title }}</div>
+                    {% if book.authors %}
+                    <div class="book-card-author">{{ book.authors }}</div>
+                    {% endif %}
+                    <div class="book-card-meta">
+                        {% if book.page_count %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="document-text-outline"></ion-icon>
+                            {{ book.page_count }}p
+                        </div>
+                        {% endif %}
+                        {% if book.book_format %}
+                        <div class="book-card-meta-item">
+                            <ion-icon name="albums-outline"></ion-icon>
+                            {{ book.book_format }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
 {% else %}
 <div class="empty-state">
-    <div class="empty-icon">📚</div>
-    <div class="empty-title">No books yet</div>
-    <div class="empty-text">Start building your library by searching for books or scanning barcodes</div>
+    <div class="empty-state-icon">📚</div>
+    <div class="empty-state-title">No books in your library yet</div>
+    <div class="empty-state-text">Start building your collection by scanning a book or searching for one.</div>
     <a href="/app/search" class="btn btn-primary">Search for Books</a>
 </div>
 {% endif %}
@@ -283,43 +663,37 @@
 
 {% block extra_js %}
 <script>
-    let currentFilter = 'all';
+    // Smooth scroll for horizontal rows
+    document.querySelectorAll('.books-row').forEach(row => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
 
-    function filterBooks(status) {
-        currentFilter = status;
-        
-        // Update button states
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
+        row.addEventListener('mousedown', (e) => {
+            isDown = true;
+            row.style.cursor = 'grabbing';
+            startX = e.pageX - row.offsetLeft;
+            scrollLeft = row.scrollLeft;
         });
-        event.target.classList.add('active');
-        
-        // Filter books
-        const books = document.querySelectorAll('.book-card');
-        let visibleCount = 0;
-        
-        books.forEach(book => {
-            if (status === 'all' || book.dataset.status === status) {
-                book.style.display = 'flex';
-                visibleCount++;
-            } else {
-                book.style.display = 'none';
-            }
+
+        row.addEventListener('mouseleave', () => {
+            isDown = false;
+            row.style.cursor = 'grab';
         });
-        
-        // Update count in header
-        const headerP = document.querySelector('.content-header p');
-        if (status === 'all') {
-            headerP.textContent = `${visibleCount} books in your collection`;
-        } else {
-            const statusLabels = {
-                'want_to_read': 'Want to Read',
-                'currently_reading': 'Currently Reading',
-                'read': 'Read'
-            };
-            headerP.textContent = `${visibleCount} books - ${statusLabels[status]}`;
-        }
-    }
+
+        row.addEventListener('mouseup', () => {
+            isDown = false;
+            row.style.cursor = 'grab';
+        });
+
+        row.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - row.offsetLeft;
+            const walk = (x - startX) * 2;
+            row.scrollLeft = scrollLeft - walk;
+        });
+    });
 </script>
 {% endblock %}
 
