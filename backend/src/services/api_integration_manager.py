@@ -205,6 +205,7 @@ class APIIntegrationManager:
         """
         Merge multiple book info results to create the most complete record
         Priority: first result for each field, but prefer non-None values
+        ISBN is the source of truth - only merge data from results with matching ISBNs
         """
         if not results:
             return None
@@ -226,11 +227,32 @@ class APIIntegrationManager:
         # Start with the first result
         merged = converted_results[0].model_copy()
 
-        # Fill in missing fields from other results
-        for result in converted_results[1:]:
+        # Get the ISBN from the first result as the source of truth
+        source_isbn = merged.isbn
+
+        # If we have an ISBN, only merge data from results with the same ISBN
+        if source_isbn:
+            # Filter results to only include those with matching ISBN
+            matching_results = [
+                result for result in converted_results[1:]
+                if result.isbn and self._normalize_isbn(result.isbn) == self._normalize_isbn(source_isbn)
+            ]
+
+            if matching_results:
+                print(f"Merging data from {len(matching_results)} results with matching ISBN: {source_isbn}")
+
+            # Only merge from matching results
+            results_to_merge = matching_results
+        else:
+            # No ISBN available, merge all results (fallback behaviour)
+            print("Warning: No ISBN available for merge validation, merging all results")
+            results_to_merge = converted_results[1:]
+
+        # Fill in missing fields from matching results only
+        for result in results_to_merge:
             for field in merged.model_fields:
                 current_value = getattr(merged, field)
-                new_value = getattr(result, field, None)  # Use getattr with default
+                new_value = getattr(result, field, None)
 
                 # If current value is None or empty, use new value
                 if current_value is None or (isinstance(current_value, (list, str)) and not current_value):
@@ -243,6 +265,14 @@ class APIIntegrationManager:
                     setattr(merged, field, combined)
 
         return merged
+
+    def _normalize_isbn(self, isbn: str) -> str:
+        """
+        Normalize ISBN by removing hyphens and spaces for comparison
+        """
+        if not isbn:
+            return ""
+        return isbn.replace("-", "").replace(" ", "").strip()
 
     def _convert_to_google_book_info(self, book_info: Any) -> GoogleBookInfo:
         """Convert any book info object to GoogleBookInfo"""

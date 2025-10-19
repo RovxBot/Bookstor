@@ -278,7 +278,11 @@ async def refresh_book_metadata(
     current_user: models.User = Depends(auth.get_current_user_flexible),
     db: Session = Depends(get_db)
 ):
-    """Refresh book metadata from all enabled API integrations"""
+    """
+    Refresh book metadata from all enabled API integrations
+    ISBN is the golden value and will never be changed
+    Only metadata matching the existing ISBN will be used
+    """
     db_book = db.query(models.Book).filter(
         models.Book.id == book_id,
         models.Book.user_id == current_user.id
@@ -290,21 +294,47 @@ async def refresh_book_metadata(
             detail="Book not found"
         )
 
+    # Store the original ISBN - this is the golden value that must never change
+    original_isbn = db_book.isbn
+
     # Try to fetch updated metadata using API integration manager
     book_info = None
-    if db_book.isbn:
-        book_info = await api_integration_manager.search_by_isbn(db_book.isbn, db)
+    if original_isbn:
+        # Search by ISBN - the API integration manager will only merge data with matching ISBNs
+        book_info = await api_integration_manager.search_by_isbn(original_isbn, db)
+
+        # Validate that the returned data matches our ISBN
+        if book_info and book_info.isbn:
+            # Normalize ISBNs for comparison (remove hyphens and spaces)
+            normalized_original = original_isbn.replace("-", "").replace(" ", "").strip()
+            normalized_returned = book_info.isbn.replace("-", "").replace(" ", "").strip()
+
+            if normalized_original != normalized_returned:
+                # ISBN mismatch - reject this data
+                print(f"WARNING: ISBN mismatch during refresh. Original: {original_isbn}, Returned: {book_info.isbn}. Rejecting data.")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"API returned data for a different book (ISBN mismatch: {original_isbn} vs {book_info.isbn})"
+                )
     elif db_book.title:
-        # Try searching by title and author if no ISBN
+        # No ISBN available - try searching by title and author
+        # This is less reliable and should be used with caution
         search_query = db_book.title
         if db_book.authors:
             search_query += f" {db_book.authors.split(',')[0]}"
         results = await api_integration_manager.search_by_title(search_query, db, max_results=1)
         if results:
             book_info = results[0]
+            # If the result has an ISBN but our book doesn't, we can add it
+            # But we should warn the user
+            if book_info.isbn:
+                print(f"INFO: Found ISBN {book_info.isbn} for book without ISBN: {db_book.title}")
 
-    # Update all metadata fields with merged data
+    # Update all metadata fields with validated data
     if book_info:
+        # NEVER update ISBN - it's the golden value
+        # The original ISBN is preserved
+
         # Update fields if new data is available
         if book_info.title:
             db_book.title = book_info.title
@@ -352,6 +382,10 @@ async def refresh_book_metadata(
         # Google Books ID
         if book_info.google_books_id:
             db_book.google_books_id = book_info.google_books_id
+
+        # Ensure ISBN is preserved (redundant but explicit)
+        if original_isbn:
+            db_book.isbn = original_isbn
 
         db.commit()
         db.refresh(db_book)
