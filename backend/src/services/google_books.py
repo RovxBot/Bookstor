@@ -123,7 +123,25 @@ class GoogleBooksService:
                 # Get the first result
                 item = data["items"][0]
                 volume_info = item.get("volumeInfo", {})
-                
+
+                # Extract ISBN from industryIdentifiers
+                extracted_isbn = None
+                industry_identifiers = volume_info.get("industryIdentifiers", [])
+                for identifier in industry_identifiers:
+                    id_type = identifier.get("type", "")
+                    id_value = identifier.get("identifier", "")
+                    # Prefer ISBN_13, but accept ISBN_10 if that's all we have
+                    if id_type == "ISBN_13":
+                        extracted_isbn = id_value
+                        break
+                    elif id_type == "ISBN_10" and not extracted_isbn:
+                        extracted_isbn = id_value
+
+                # If we didn't find an ISBN in the response, use the search ISBN
+                if not extracted_isbn:
+                    extracted_isbn = isbn
+                    print(f"Warning: Google Books didn't return ISBN in industryIdentifiers, using search ISBN: {isbn}")
+
                 # Extract thumbnail (prefer larger image)
                 thumbnail = None
                 if "imageLinks" in volume_info:
@@ -161,6 +179,7 @@ class GoogleBooksService:
                     page_count=volume_info.get("pageCount"),
                     categories=categories,
                     thumbnail=thumbnail,
+                    isbn=extracted_isbn,  # Add the extracted ISBN
                     google_books_id=item.get("id"),
                     series_name=series_name,
                     series_position=series_position

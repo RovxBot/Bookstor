@@ -31,24 +31,35 @@ class APIIntegrationManager:
     async def search_by_isbn(self, isbn: str, db: Session) -> Optional[GoogleBookInfo]:
         """
         Search for a book by ISBN across all enabled APIs in priority order
-        Returns the first successful result
+        Returns merged results with strict ISBN validation
         """
         integrations = self.get_enabled_integrations(db)
-        
+
+        normalized_search_isbn = self._normalize_isbn(isbn)
         results = []
+
         for integration in integrations:
             try:
                 result = await self._search_isbn_with_integration(isbn, integration)
                 if result:
-                    results.append(result)
+                    # Validate that the result has an ISBN and it matches what we searched for
+                    if result.isbn:
+                        normalized_result_isbn = self._normalize_isbn(result.isbn)
+                        if normalized_result_isbn == normalized_search_isbn:
+                            print(f"✓ {integration.display_name}: ISBN match ({result.isbn})")
+                            results.append(result)
+                        else:
+                            print(f"✗ {integration.display_name}: ISBN MISMATCH! Searched: {isbn}, Got: {result.isbn} - REJECTING")
+                    else:
+                        print(f"⚠ {integration.display_name}: Result has no ISBN - REJECTING to prevent data contamination")
             except Exception as e:
                 print(f"Error searching {integration.display_name} for ISBN {isbn}: {e}")
                 continue
-        
+
         # Merge results from all APIs to get the most complete data
         if results:
-            return self._merge_book_info(results)
-        
+            return self._merge_book_info(results, search_isbn=isbn)
+
         return None
     
     async def _search_isbn_with_integration(
@@ -201,11 +212,15 @@ class APIIntegrationManager:
             print(f"Error in generic title search for {integration.display_name}: {e}")
             return []
     
-    def _merge_book_info(self, results: List[GoogleBookInfo]) -> GoogleBookInfo:
+    def _merge_book_info(self, results: List[GoogleBookInfo], search_isbn: Optional[str] = None) -> GoogleBookInfo:
         """
         Merge multiple book info results to create the most complete record
         Priority: first result for each field, but prefer non-None values
         ISBN is the source of truth - only merge data from results with matching ISBNs
+
+        Args:
+            results: List of book info results from different APIs
+            search_isbn: The ISBN that was searched for (used for validation)
         """
         if not results:
             return None
@@ -224,32 +239,37 @@ class APIIntegrationManager:
             else:
                 converted_results.append(self._convert_to_google_book_info(result))
 
-        # Start with the first result
-        merged = converted_results[0].model_copy()
+        # Use search_isbn as the source of truth if provided, otherwise use first result's ISBN
+        source_isbn = search_isbn if search_isbn else converted_results[0].isbn
 
-        # Get the ISBN from the first result as the source of truth
-        source_isbn = merged.isbn
+        if not source_isbn:
+            print("ERROR: No ISBN available for merge validation - cannot safely merge results")
+            # Return first result only to avoid data contamination
+            return converted_results[0]
 
-        # If we have an ISBN, only merge data from results with the same ISBN
-        if source_isbn:
-            # Filter results to only include those with matching ISBN
-            matching_results = [
-                result for result in converted_results[1:]
-                if result.isbn and self._normalize_isbn(result.isbn) == self._normalize_isbn(source_isbn)
-            ]
+        normalized_source = self._normalize_isbn(source_isbn)
 
-            if matching_results:
-                print(f"Merging data from {len(matching_results)} results with matching ISBN: {source_isbn}")
+        # Filter ALL results (including first) to only include those with matching ISBN
+        matching_results = [
+            result for result in converted_results
+            if result.isbn and self._normalize_isbn(result.isbn) == normalized_source
+        ]
 
-            # Only merge from matching results
-            results_to_merge = matching_results
-        else:
-            # No ISBN available, merge all results (fallback behaviour)
-            print("Warning: No ISBN available for merge validation, merging all results")
-            results_to_merge = converted_results[1:]
+        if not matching_results:
+            print(f"ERROR: No results match the source ISBN {source_isbn}")
+            return None
 
-        # Fill in missing fields from matching results only
-        for result in results_to_merge:
+        if len(matching_results) < len(converted_results):
+            rejected_count = len(converted_results) - len(matching_results)
+            print(f"⚠ Rejected {rejected_count} results with non-matching ISBNs")
+
+        print(f"✓ Merging data from {len(matching_results)} results with matching ISBN: {source_isbn}")
+
+        # Start with the first matching result
+        merged = matching_results[0].model_copy()
+
+        # Fill in missing fields from other matching results
+        for result in matching_results[1:]:
             for field in merged.model_fields:
                 current_value = getattr(merged, field)
                 new_value = getattr(result, field, None)
