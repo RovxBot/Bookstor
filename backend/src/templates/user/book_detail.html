@@ -521,9 +521,9 @@
                     Refresh Metadata
                 </button>
                 {% if book.is_wishlist %}
-                <button type="button" class="hero-btn hero-btn-secondary" onclick="removeFromWishlist()">
-                    <ion-icon name="heart"></ion-icon>
-                    Remove from Wishlist
+                <button type="button" class="hero-btn hero-btn-secondary" onclick="markAsPurchased()">
+                    <ion-icon name="cart-outline"></ion-icon>
+                    Purchased
                 </button>
                 {% else %}
                 <button type="button" class="hero-btn hero-btn-secondary" onclick="addToWishlist()">
@@ -798,42 +798,56 @@
         }
     }
 
-    async function toggleWishlist() {
-        const isWishlist = {{ 'true' if book.is_wishlist else 'false' }};
+    async function addToWishlist() {
+        try {
+            const response = await fetch('/api/books/{{ book.id }}', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({is_wishlist: true})
+            });
+
+            if (response.ok) {
+                showNotification('Added to wishlist!', 'success');
+                location.reload();
+            } else {
+                const errorData = await response.json();
+                console.error('Add to wishlist error:', errorData);
+                showNotification('Failed to add to wishlist: ' + (errorData.detail || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Add to wishlist error:', error);
+            showNotification('Failed to add to wishlist', 'error');
+        }
+    }
+
+    async function markAsPurchased() {
+        if (!confirm('Mark this book as purchased? This will move it from your wishlist to your library.')) {
+            return;
+        }
 
         try {
             const response = await fetch('/api/books/{{ book.id }}', {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 credentials: 'same-origin',
-                body: JSON.stringify({is_wishlist: !isWishlist})
+                body: JSON.stringify({
+                    is_wishlist: false,
+                    reading_status: 'want_to_read'
+                })
             });
-            
+
             if (response.ok) {
-                const btn = document.getElementById('wishlistBtn');
-                const icon = document.getElementById('wishlistIcon');
-                const text = document.getElementById('wishlistText');
-
-                if (isWishlist) {
-                    btn.classList.remove('active');
-                    icon.innerHTML = '<ion-icon name="star-outline"></ion-icon>';
-                    text.textContent = 'Add to Wishlist';
-                } else {
-                    btn.classList.add('active');
-                    icon.innerHTML = '<ion-icon name="star"></ion-icon>';
-                    text.textContent = 'In Wishlist';
-                }
-
-                showNotification('Wishlist updated!', 'success');
-                location.reload();
+                showNotification('Book marked as purchased and moved to library!', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
                 const errorData = await response.json();
-                console.error('Toggle wishlist error:', errorData);
-                showNotification('Failed to update wishlist: ' + (errorData.detail || 'Unknown error'), 'error');
+                console.error('Mark as purchased error:', errorData);
+                showNotification('Failed to mark as purchased: ' + (errorData.detail || 'Unknown error'), 'error');
             }
         } catch (error) {
-            console.error('Toggle wishlist error:', error);
-            showNotification('Failed to update wishlist', 'error');
+            console.error('Mark as purchased error:', error);
+            showNotification('Failed to mark as purchased', 'error');
         }
     }
 

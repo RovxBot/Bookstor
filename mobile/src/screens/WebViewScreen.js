@@ -6,6 +6,7 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
@@ -218,7 +219,7 @@ export default function WebViewScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WebView
         ref={webViewRef}
         source={{ uri: `${serverUrl}/app/library` }}
@@ -239,7 +240,7 @@ export default function WebViewScreen({ navigation }) {
         thirdPartyCookiesEnabled={true}
         cacheEnabled={true}
         // User agent - identify as mobile browser
-        userAgent="Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36 BookstorApp/0.0.3"
+        userAgent="Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36 BookstorApp/0.0.5"
         // Rendering
         renderLoading={() => (
           <View style={styles.loadingContainer}>
@@ -259,7 +260,7 @@ export default function WebViewScreen({ navigation }) {
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

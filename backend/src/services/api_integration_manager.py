@@ -9,16 +9,18 @@ from ..models import APIIntegration
 from ..schemas import GoogleBookInfo
 from .google_books import google_books_service
 from .openlibrary import openlibrary_service
+from .hardcover import HardcoverService
 
 
 class APIIntegrationManager:
     """Manages dynamic API integrations for book metadata fetching"""
-    
+
     def __init__(self):
         self.service_map = {
             'google_books': google_books_service,
             'open_library': openlibrary_service
         }
+        self.hardcover_service = None  # Will be initialised with API key from DB
     
     def get_enabled_integrations(self, db: Session) -> List[APIIntegration]:
         """Get all enabled API integrations sorted by priority"""
@@ -50,13 +52,19 @@ class APIIntegrationManager:
         return None
     
     async def _search_isbn_with_integration(
-        self, 
-        isbn: str, 
+        self,
+        isbn: str,
         integration: APIIntegration
     ) -> Optional[GoogleBookInfo]:
         """Search a specific integration for ISBN"""
+        # Handle Hardcover separately (needs API key)
+        if integration.name in ['hardcover', 'hardcover_api']:
+            if not self.hardcover_service or self.hardcover_service.api_key != integration.api_key:
+                self.hardcover_service = HardcoverService(api_key=integration.api_key)
+            return await self.hardcover_service.search_by_isbn(isbn)
+
         service = self.service_map.get(integration.name)
-        
+
         if service:
             # Use existing service
             result = await service.search_by_isbn(isbn)
@@ -141,8 +149,14 @@ class APIIntegrationManager:
         max_results: int
     ) -> List[GoogleBookInfo]:
         """Search a specific integration for title"""
+        # Handle Hardcover separately (needs API key)
+        if integration.name in ['hardcover', 'hardcover_api']:
+            if not self.hardcover_service or self.hardcover_service.api_key != integration.api_key:
+                self.hardcover_service = HardcoverService(api_key=integration.api_key)
+            return await self.hardcover_service.search_by_title(query, max_results)
+
         service = self.service_map.get(integration.name)
-        
+
         if service and hasattr(service, 'search_by_title'):
             # Use existing service
             return await service.search_by_title(query, max_results)
