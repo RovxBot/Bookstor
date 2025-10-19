@@ -35,7 +35,6 @@ class APIIntegrationManager:
         """
         integrations = self.get_enabled_integrations(db)
 
-        normalized_search_isbn = self._normalize_isbn(isbn)
         results = []
 
         for integration in integrations:
@@ -44,8 +43,8 @@ class APIIntegrationManager:
                 if result:
                     # Validate that the result has an ISBN and it matches what we searched for
                     if result.isbn:
-                        normalized_result_isbn = self._normalize_isbn(result.isbn)
-                        if normalized_result_isbn == normalized_search_isbn:
+                        # Use ISBN matching that handles ISBN-10 to ISBN-13 conversion
+                        if self._isbns_match(isbn, result.isbn):
                             print(f"✓ {integration.display_name}: ISBN match ({result.isbn})")
                             results.append(result)
                         else:
@@ -247,12 +246,11 @@ class APIIntegrationManager:
             # Return first result only to avoid data contamination
             return converted_results[0]
 
-        normalized_source = self._normalize_isbn(source_isbn)
-
         # Filter ALL results (including first) to only include those with matching ISBN
+        # Use ISBN matching that handles ISBN-10 to ISBN-13 conversion
         matching_results = [
             result for result in converted_results
-            if result.isbn and self._normalize_isbn(result.isbn) == normalized_source
+            if result.isbn and self._isbns_match(source_isbn, result.isbn)
         ]
 
         if not matching_results:
@@ -288,11 +286,59 @@ class APIIntegrationManager:
 
     def _normalize_isbn(self, isbn: str) -> str:
         """
-        Normalize ISBN by removing hyphens and spaces for comparison
+        Normalise ISBN by removing hyphens and spaces for comparison
         """
         if not isbn:
             return ""
         return isbn.replace("-", "").replace(" ", "").strip()
+
+    def _isbn10_to_isbn13(self, isbn10: str) -> str:
+        """
+        Convert ISBN-10 to ISBN-13
+        ISBN-13 = 978 + first 9 digits of ISBN-10 + new check digit
+        """
+        if not isbn10 or len(isbn10) != 10:
+            return isbn10
+
+        # Take first 9 digits and prepend 978
+        isbn13_base = "978" + isbn10[:9]
+
+        # Calculate check digit for ISBN-13
+        check_sum = 0
+        for i, digit in enumerate(isbn13_base):
+            if i % 2 == 0:
+                check_sum += int(digit)
+            else:
+                check_sum += int(digit) * 3
+
+        check_digit = (10 - (check_sum % 10)) % 10
+
+        return isbn13_base + str(check_digit)
+
+    def _isbns_match(self, isbn1: str, isbn2: str) -> bool:
+        """
+        Check if two ISBNs match, accounting for ISBN-10 to ISBN-13 conversion
+        """
+        if not isbn1 or not isbn2:
+            return False
+
+        # Normalise both ISBNs
+        norm1 = self._normalize_isbn(isbn1)
+        norm2 = self._normalize_isbn(isbn2)
+
+        # Direct match
+        if norm1 == norm2:
+            return True
+
+        # Check if one is ISBN-10 and the other is ISBN-13
+        if len(norm1) == 10 and len(norm2) == 13:
+            # Convert ISBN-10 to ISBN-13 and compare
+            return self._isbn10_to_isbn13(norm1) == norm2
+        elif len(norm1) == 13 and len(norm2) == 10:
+            # Convert ISBN-10 to ISBN-13 and compare
+            return norm1 == self._isbn10_to_isbn13(norm2)
+
+        return False
 
     def _convert_to_google_book_info(self, book_info: Any) -> GoogleBookInfo:
         """Convert any book info object to GoogleBookInfo"""
