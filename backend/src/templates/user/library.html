@@ -307,6 +307,213 @@
         gap: 0.25rem;
     }
 
+    /* Edit Cover Icon */
+    .edit-cover-icon {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.3s;
+        cursor: pointer;
+        z-index: 5;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .edit-cover-icon:hover {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: var(--primary-colour);
+        transform: scale(1.1);
+    }
+
+    .book-card:hover .edit-cover-icon {
+        opacity: 1;
+    }
+
+    .edit-cover-icon ion-icon {
+        font-size: 18px;
+        color: white;
+    }
+
+    /* Cover Art Selector Modal */
+    .cover-selector-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .cover-selector-modal.active {
+        display: flex;
+    }
+
+    .cover-selector-content {
+        background: var(--surface);
+        border-radius: 16px;
+        max-width: 900px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 2rem;
+        position: relative;
+    }
+
+    .cover-selector-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .cover-selector-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .cover-selector-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--background);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .cover-selector-close:hover {
+        background: var(--border);
+        transform: scale(1.1);
+    }
+
+    .cover-selector-close ion-icon {
+        font-size: 24px;
+        color: var(--text-primary);
+    }
+
+    .cover-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .cover-option {
+        cursor: pointer;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s;
+        border: 3px solid transparent;
+        position: relative;
+    }
+
+    .cover-option:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .cover-option.selected {
+        border-color: var(--primary-colour);
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
+    }
+
+    .cover-option img {
+        width: 100%;
+        height: 270px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .cover-option-label {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+        padding: 1rem 0.5rem 0.5rem;
+        font-size: 0.75rem;
+        color: white;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .cover-selector-actions {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .cover-selector-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .cover-selector-btn-cancel {
+        background: var(--background);
+        color: var(--text-primary);
+    }
+
+    .cover-selector-btn-cancel:hover {
+        background: var(--border);
+    }
+
+    .cover-selector-btn-save {
+        background: var(--primary-colour);
+        color: white;
+    }
+
+    .cover-selector-btn-save:hover {
+        background: var(--primary-hover);
+    }
+
+    .cover-selector-btn-save:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .cover-selector-loading {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .cover-selector-loading ion-icon {
+        font-size: 48px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     /* Status Badge on Card */
     .book-card-status {
         position: absolute;
@@ -692,34 +899,39 @@
         </div>
         <div class="books-row">
             {% for book in currently_reading %}
-            <a href="/app/book/{{ book.id }}" class="book-card">
-                {% if book.thumbnail %}
-                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-                {% else %}
-                <div class="book-cover-placeholder">📚</div>
-                {% endif %}
-                <div class="book-card-status status-currently_reading">Reading</div>
-                <div class="book-card-overlay">
-                    <div class="book-card-title">{{ book.title }}</div>
-                    {% if book.authors %}
-                    <div class="book-card-author">{{ book.authors }}</div>
+            <div class="book-card" style="position: relative;">
+                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
+                    {% if book.thumbnail %}
+                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                    {% else %}
+                    <div class="book-cover-placeholder">📚</div>
                     {% endif %}
-                    <div class="book-card-meta">
-                        {% if book.page_count %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="document-text-outline"></ion-icon>
-                            {{ book.page_count }}p
-                        </div>
+                    <div class="book-card-status status-currently_reading">Reading</div>
+                    <div class="book-card-overlay">
+                        <div class="book-card-title">{{ book.title }}</div>
+                        {% if book.authors %}
+                        <div class="book-card-author">{{ book.authors }}</div>
                         {% endif %}
-                        {% if book.book_format %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="albums-outline"></ion-icon>
-                            {{ book.book_format }}
+                        <div class="book-card-meta">
+                            {% if book.page_count %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="document-text-outline"></ion-icon>
+                                {{ book.page_count }}p
+                            </div>
+                            {% endif %}
+                            {% if book.book_format %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="albums-outline"></ion-icon>
+                                {{ book.book_format }}
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
+                </a>
+                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
+                    <ion-icon name="create-outline"></ion-icon>
                 </div>
-            </a>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -734,34 +946,39 @@
         </div>
         <div class="books-row">
             {% for book in want_to_read %}
-            <a href="/app/book/{{ book.id }}" class="book-card">
-                {% if book.thumbnail %}
-                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-                {% else %}
-                <div class="book-cover-placeholder">📚</div>
-                {% endif %}
-                <div class="book-card-status status-want_to_read">Want to Read</div>
-                <div class="book-card-overlay">
-                    <div class="book-card-title">{{ book.title }}</div>
-                    {% if book.authors %}
-                    <div class="book-card-author">{{ book.authors }}</div>
+            <div class="book-card" style="position: relative;">
+                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
+                    {% if book.thumbnail %}
+                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                    {% else %}
+                    <div class="book-cover-placeholder">📚</div>
                     {% endif %}
-                    <div class="book-card-meta">
-                        {% if book.page_count %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="document-text-outline"></ion-icon>
-                            {{ book.page_count }}p
-                        </div>
+                    <div class="book-card-status status-want_to_read">Want to Read</div>
+                    <div class="book-card-overlay">
+                        <div class="book-card-title">{{ book.title }}</div>
+                        {% if book.authors %}
+                        <div class="book-card-author">{{ book.authors }}</div>
                         {% endif %}
-                        {% if book.book_format %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="albums-outline"></ion-icon>
-                            {{ book.book_format }}
+                        <div class="book-card-meta">
+                            {% if book.page_count %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="document-text-outline"></ion-icon>
+                                {{ book.page_count }}p
+                            </div>
+                            {% endif %}
+                            {% if book.book_format %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="albums-outline"></ion-icon>
+                                {{ book.book_format }}
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
+                </a>
+                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
+                    <ion-icon name="create-outline"></ion-icon>
                 </div>
-            </a>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -776,34 +993,39 @@
         </div>
         <div class="books-row">
             {% for book in read_books %}
-            <a href="/app/book/{{ book.id }}" class="book-card">
-                {% if book.thumbnail %}
-                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-                {% else %}
-                <div class="book-cover-placeholder">📚</div>
-                {% endif %}
-                <div class="book-card-status status-read">Read</div>
-                <div class="book-card-overlay">
-                    <div class="book-card-title">{{ book.title }}</div>
-                    {% if book.authors %}
-                    <div class="book-card-author">{{ book.authors }}</div>
+            <div class="book-card" style="position: relative;">
+                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
+                    {% if book.thumbnail %}
+                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                    {% else %}
+                    <div class="book-cover-placeholder">📚</div>
                     {% endif %}
-                    <div class="book-card-meta">
-                        {% if book.page_count %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="document-text-outline"></ion-icon>
-                            {{ book.page_count }}p
-                        </div>
+                    <div class="book-card-status status-read">Read</div>
+                    <div class="book-card-overlay">
+                        <div class="book-card-title">{{ book.title }}</div>
+                        {% if book.authors %}
+                        <div class="book-card-author">{{ book.authors }}</div>
                         {% endif %}
-                        {% if book.book_format %}
-                        <div class="book-card-meta-item">
-                            <ion-icon name="albums-outline"></ion-icon>
-                            {{ book.book_format }}
+                        <div class="book-card-meta">
+                            {% if book.page_count %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="document-text-outline"></ion-icon>
+                                {{ book.page_count }}p
+                            </div>
+                            {% endif %}
+                            {% if book.book_format %}
+                            <div class="book-card-meta-item">
+                                <ion-icon name="albums-outline"></ion-icon>
+                                {{ book.book_format }}
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
+                </a>
+                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
+                    <ion-icon name="create-outline"></ion-icon>
                 </div>
-            </a>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -817,6 +1039,29 @@
     <a href="/app/search" class="btn btn-primary">Search for Books</a>
 </div>
 {% endif %}
+
+<!-- Cover Art Selector Modal -->
+<div id="coverSelectorModal" class="cover-selector-modal">
+    <div class="cover-selector-content">
+        <div class="cover-selector-header">
+            <h2 class="cover-selector-title">Select Cover Art</h2>
+            <button class="cover-selector-close" onclick="closeCoverSelector()">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
+        </div>
+        <div id="coverOptionsContainer">
+            <div class="cover-selector-loading">
+                <ion-icon name="hourglass-outline"></ion-icon>
+                <p>Loading cover art options...</p>
+            </div>
+        </div>
+        <div class="cover-selector-actions">
+            <button class="cover-selector-btn cover-selector-btn-cancel" onclick="closeCoverSelector()">Cancel</button>
+            <button id="saveCoverBtn" class="cover-selector-btn cover-selector-btn-save" onclick="saveCoverSelection()" disabled>Save</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1017,6 +1262,132 @@
                 scrollContainer.scrollLeft += e.deltaY * 2;
             }
         }, { passive: false });
+    });
+
+    // Cover Art Selector Functionality
+    let currentBookId = null;
+    let selectedCoverUrl = null;
+
+    async function openCoverSelector(bookId) {
+        currentBookId = bookId;
+        selectedCoverUrl = null;
+
+        const modal = document.getElementById('coverSelectorModal');
+        const container = document.getElementById('coverOptionsContainer');
+        const saveBtn = document.getElementById('saveCoverBtn');
+
+        // Show modal
+        modal.classList.add('active');
+
+        // Reset state
+        container.innerHTML = '<div class="cover-selector-loading"><ion-icon name="hourglass-outline"></ion-icon><p>Loading cover art options...</p></div>';
+        saveBtn.disabled = true;
+
+        try {
+            // Fetch cover art options from API
+            const response = await fetch(`/api/books/${bookId}/cover-options`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch cover art options');
+            }
+
+            const data = await response.json();
+
+            if (data.options.length === 0) {
+                container.innerHTML = '<div class="cover-selector-loading"><p>No cover art options available for this book.</p></div>';
+                return;
+            }
+
+            // Render cover options
+            const grid = document.createElement('div');
+            grid.className = 'cover-options-grid';
+
+            data.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'cover-option';
+                optionDiv.dataset.url = option.url;
+
+                // Mark current cover as selected
+                if (option.url === data.current_cover) {
+                    optionDiv.classList.add('selected');
+                    selectedCoverUrl = option.url;
+                    saveBtn.disabled = false;
+                }
+
+                optionDiv.innerHTML = `
+                    <img src="${option.url}" alt="Cover option from ${option.source}" onerror="this.parentElement.style.display='none';">
+                    <div class="cover-option-label">${option.source}</div>
+                `;
+
+                optionDiv.addEventListener('click', () => {
+                    // Remove selected class from all options
+                    document.querySelectorAll('.cover-option').forEach(opt => opt.classList.remove('selected'));
+
+                    // Add selected class to clicked option
+                    optionDiv.classList.add('selected');
+                    selectedCoverUrl = option.url;
+                    saveBtn.disabled = false;
+                });
+
+                grid.appendChild(optionDiv);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(grid);
+
+        } catch (error) {
+            console.error('Error loading cover art options:', error);
+            container.innerHTML = '<div class="cover-selector-loading"><p>Error loading cover art options. Please try again.</p></div>';
+        }
+    }
+
+    function closeCoverSelector() {
+        const modal = document.getElementById('coverSelectorModal');
+        modal.classList.remove('active');
+        currentBookId = null;
+        selectedCoverUrl = null;
+    }
+
+    async function saveCoverSelection() {
+        if (!currentBookId || !selectedCoverUrl) {
+            return;
+        }
+
+        const saveBtn = document.getElementById('saveCoverBtn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const response = await fetch(`/api/books/${currentBookId}/cover`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cover_url: selectedCoverUrl
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update cover art');
+            }
+
+            // Reload the page to show the new cover
+            window.location.reload();
+
+        } catch (error) {
+            console.error('Error saving cover art:', error);
+            alert('Failed to update cover art. Please try again.');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+        }
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('coverSelectorModal').addEventListener('click', (e) => {
+        if (e.target.id === 'coverSelectorModal') {
+            closeCoverSelector();
+        }
     });
 </script>
 {% endblock %}

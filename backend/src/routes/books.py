@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict
+from pydantic import BaseModel
 from .. import models, schemas, auth
 from ..database import get_db
 from ..services.google_books import google_books_service
@@ -8,6 +9,23 @@ from ..services.openlibrary import openlibrary_service
 from ..services.api_integration_manager import api_integration_manager
 
 router = APIRouter(prefix="/books", tags=["books"])
+
+
+# Schema for cover art options
+class CoverArtOption(BaseModel):
+    source: str  # API name (e.g., "Google Books", "Open Library", "Hardcover")
+    url: str
+    size: Optional[str] = None  # e.g., "small", "medium", "large"
+
+
+class CoverArtOptions(BaseModel):
+    book_id: int
+    current_cover: Optional[str]
+    options: List[CoverArtOption]
+
+
+class UpdateCoverRequest(BaseModel):
+    cover_url: str
 
 
 @router.get("/search", response_model=List[schemas.GoogleBookInfo])
@@ -415,4 +433,101 @@ def delete_book(
     db.commit()
 
     return None
+
+
+@router.get("/{book_id}/cover-options", response_model=CoverArtOptions)
+async def get_cover_art_options(
+    book_id: int,
+    current_user: models.User = Depends(auth.get_current_user_flexible),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all available cover art options from different APIs for a book
+    """
+    db_book = db.query(models.Book).filter(
+        models.Book.id == book_id,
+        models.Book.user_id == current_user.id
+    ).first()
+
+    if not db_book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book not found"
+        )
+
+    if not db_book.isbn:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Book must have an ISBN to fetch cover art options"
+        )
+
+    # Fetch book info from all enabled APIs
+    integrations = api_integration_manager.get_enabled_integrations(db)
+    cover_options = []
+
+    for integration in integrations:
+        try:
+            result = await api_integration_manager._search_isbn_with_integration(
+                db_book.isbn, integration
+            )
+            if result and result.thumbnail:
+                cover_options.append(CoverArtOption(
+                    source=integration.display_name,
+                    url=result.thumbnail,
+                    size="large"
+                ))
+        except Exception as e:
+            print(f"Error fetching cover from {integration.display_name}: {e}")
+            continue
+
+    # Also try Open Library with different sizes
+    try:
+        for size in ["L", "M", "S"]:
+            cover_url = await openlibrary_service.get_cover_by_isbn(db_book.isbn, size=size)
+            if cover_url:
+                size_name = {"L": "large", "M": "medium", "S": "small"}.get(size, size)
+                # Check if this URL is already in options
+                if not any(opt.url == cover_url for opt in cover_options):
+                    cover_options.append(CoverArtOption(
+                        source=f"Open Library ({size_name})",
+                        url=cover_url,
+                        size=size_name
+                    ))
+    except Exception as e:
+        print(f"Error fetching Open Library covers: {e}")
+
+    return CoverArtOptions(
+        book_id=book_id,
+        current_cover=db_book.thumbnail,
+        options=cover_options
+    )
+
+
+@router.patch("/{book_id}/cover", response_model=schemas.Book)
+async def update_book_cover(
+    book_id: int,
+    cover_request: UpdateCoverRequest,
+    current_user: models.User = Depends(auth.get_current_user_flexible),
+    db: Session = Depends(get_db)
+):
+    """
+    Update the cover art for a book
+    """
+    db_book = db.query(models.Book).filter(
+        models.Book.id == book_id,
+        models.Book.user_id == current_user.id
+    ).first()
+
+    if not db_book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book not found"
+        )
+
+    # Update the thumbnail
+    db_book.thumbnail = cover_request.cover_url
+    db.commit()
+    db.refresh(db_book)
+
+    return db_book
 
