@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ISBN Lookup</title>
+</head>
+<body>
+    <h1>Test ISBN Lookup</h1>
+    <p>Email: <input type="text" id="email" value="sam@cooked.beer"></p>
+    <p>Password: <input type="password" id="password" value="password"></p>
+    <button onclick="login()">Login</button>
+    <hr>
+    <p>ISBN: <input type="text" id="isbn" value="9780316769174"></p>
+    <button onclick="addBook()">Add Book</button>
+    <hr>
+    <div id="result"></div>
+
+    <script>
+        let token = null;
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    document.getElementById('result').innerHTML = `<p style="color: red;">Login failed: ${error.detail}</p>`;
+                    return;
+                }
+
+                const data = await response.json();
+                token = data.access_token;
+                document.getElementById('result').innerHTML = `<p style="color: green;">Login successful! Token: ${token.substring(0, 20)}...</p>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Login error: ${error.message}</p>`;
+            }
+        }
+
+        async function addBook() {
+            if (!token) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Please login first</p>`;
+                return;
+            }
+
+            const isbn = document.getElementById('isbn').value;
+            
+            try {
+                console.log('Sending request to /api/books/isbn/');
+                console.log('ISBN:', isbn);
+                console.log('Token:', token.substring(0, 20) + '...');
+
+                const response = await fetch('/api/books/isbn/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        isbn: isbn,
+                        reading_status: 'want_to_read',
+                        is_wishlist: false
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error('Error response:', error);
+                    document.getElementById('result').innerHTML = `<p style="color: red;">Failed: ${error.detail}</p>`;
+                    return;
+                }
+
+                const book = await response.json();
+                console.log('Success:', book);
+                document.getElementById('result').innerHTML = `
+                    <p style="color: green;">Book added successfully!</p>
+                    <p>Title: ${book.title}</p>
+                    <p>Authors: ${book.authors}</p>
+                    <p>ISBN: ${book.isbn}</p>
+                `;
+            } catch (error) {
+                console.error('Request error:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

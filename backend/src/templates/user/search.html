@@ -516,9 +516,123 @@
     async function addByISBN(event) {
         event.preventDefault();
         const isbn = document.getElementById('isbnInput').value;
-        
-        // This would need backend support
-        alert('ISBN lookup will be implemented with backend support');
+
+        // Show loading indicator
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        try {
+            console.log('Looking up ISBN:', isbn);
+
+            const response = await fetch('/api/books/isbn/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    isbn: isbn,
+                    reading_status: 'want_to_read',
+                    is_wishlist: false
+                })
+            });
+
+            loading.style.display = 'none';
+
+            if (response.ok) {
+                const book = await response.json();
+                alert(`"${book.title}" has been added to your library!`);
+                window.location.href = `/app/book/${book.id}`;
+            } else {
+                const error = await response.json();
+                console.error('ISBN lookup error:', error);
+                alert(`Failed to add book: ${error.detail || 'Unknown error'}`);
+            }
+        } catch (error) {
+            loading.style.display = 'none';
+            console.error('ISBN lookup failed:', error);
+            alert('Failed to add book. Please try again.');
+        }
+    }
+
+    async function addToLibrary() {
+        const isbn = document.getElementById('isbnInput').value;
+        if (!isbn) {
+            alert('Please enter an ISBN');
+            return;
+        }
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/books/isbn/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    isbn: isbn,
+                    reading_status: 'want_to_read',
+                    is_wishlist: false
+                })
+            });
+
+            loading.style.display = 'none';
+
+            if (response.ok) {
+                const book = await response.json();
+                alert(`"${book.title}" has been added to your library!`);
+                window.location.href = `/app/book/${book.id}`;
+            } else {
+                const error = await response.json();
+                alert(`Failed to add book: ${error.detail || 'Unknown error'}`);
+            }
+        } catch (error) {
+            loading.style.display = 'none';
+            alert('Failed to add book. Please try again.');
+        }
+    }
+
+    async function addToWishlist() {
+        const isbn = document.getElementById('isbnInput').value;
+        if (!isbn) {
+            alert('Please enter an ISBN');
+            return;
+        }
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/books/isbn/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    isbn: isbn,
+                    reading_status: 'wishlist',
+                    is_wishlist: true
+                })
+            });
+
+            loading.style.display = 'none';
+
+            if (response.ok) {
+                const book = await response.json();
+                alert(`"${book.title}" has been added to your wishlist!`);
+                window.location.href = `/app/book/${book.id}`;
+            } else {
+                const error = await response.json();
+                alert(`Failed to add book: ${error.detail || 'Unknown error'}`);
+            }
+        } catch (error) {
+            loading.style.display = 'none';
+            alert('Failed to add book. Please try again.');
+        }
     }
 </script>
 {% endblock %}

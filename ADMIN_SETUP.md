@@ -60,18 +60,6 @@ Login with the credentials you just created.
 - Access API documentation
 - View available endpoints
 
-## Security Features
-
-✅ **Admin-Only Access**: Only users with `is_admin = true` can access the panel
-
-✅ **Secure Sessions**: HTTPOnly cookies with 7-day expiry
-
-✅ **Password Validation**: Enforced strong password requirements
-
-✅ **Self-Protection**: Cannot delete yourself or remove your own admin status
-
-✅ **Automatic Registration Control**: Registration is disabled after first user
-
 ## Troubleshooting
 
 ### Cannot Access Admin Panel
@@ -159,36 +147,15 @@ The admin panel uses these endpoints:
    http://localhost:8000/admin/login
    ```
 
-### File Structure
-
-```
-backend/
-├── src/
-│   ├── routes/
-│   │   └── admin.py          # Admin routes and API endpoints
-│   ├── static/
-│   │   ├── admin.css         # Admin panel styles
-│   │   └── admin.js          # Admin panel JavaScript
-│   ├── templates/
-│   │   └── admin/
-│   │       ├── base.html     # Base template
-│   │       ├── login.html    # Login page
-│   │       ├── dashboard.html # Dashboard
-│   │       ├── users.html    # User management
-│   │       └── settings.html # Settings
-│   └── main.py               # Updated with admin routes
-└── requirements.txt          # Updated with jinja2, itsdangerous
-```
-
 ## Next Steps
 
 After setting up the admin panel:
 
-1. ✅ Create your admin account
-2. ✅ Login to the admin panel
-3. ✅ Create additional users if needed
-4. ✅ Configure registration settings
-5. ✅ Set up the mobile app to connect to your server
+1. Create your admin account
+2. Login to the admin panel
+3. Create additional users if needed
+4. Configure registration settings
+5. Set up the mobile app to connect to your server
 
 For mobile app setup, see the main [README.md](README.md).
 

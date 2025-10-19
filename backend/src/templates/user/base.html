@@ -626,8 +626,16 @@
                 })
             })
             .then(response => {
+                console.log('ISBN API Response:', response.status, response.statusText);
                 if (!response.ok) {
-                    return response.json().then(err => Promise.reject(err));
+                    return response.json().then(err => {
+                        console.error('ISBN API Error:', err);
+                        return Promise.reject(err);
+                    }).catch(jsonErr => {
+                        // If response is not JSON, reject with status text
+                        console.error('ISBN API Non-JSON Error:', response.statusText);
+                        return Promise.reject({ detail: response.statusText || 'Unknown error' });
+                    });
                 }
                 return response.json();
             })
@@ -664,6 +672,8 @@
                 }, 1500);
             })
             .catch(error => {
+                console.error('ISBN Lookup Failed:', error);
+
                 // Remove loading indicator
                 if (document.getElementById('scanner-loading')) {
                     document.body.removeChild(loadingDiv);
@@ -685,19 +695,21 @@
                     text-align: center;
                     max-width: 80%;
                 `;
+                const errorMessage = error.detail || error.message || 'Please try again';
                 errorDiv.innerHTML = `
                     <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✗</div>
                     <div style="font-size: 1.1rem; font-weight: 600;">Failed to add book</div>
-                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">${error.detail || 'Please try again'}</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">${errorMessage}</div>
+                    <div style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.8;">Check browser console (F12) for details</div>
                 `;
                 document.body.appendChild(errorDiv);
 
-                // Remove error after 3 seconds
+                // Remove error after 5 seconds
                 setTimeout(() => {
                     if (document.body.contains(errorDiv)) {
                         document.body.removeChild(errorDiv);
                     }
-                }, 3000);
+                }, 5000);
             });
         };
 
@@ -867,8 +879,9 @@
                         window.closeWebcamScanner();
 
                         // Ask user what to do with the scanned book
-                        const addToWishlist = confirm(`ISBN: ${isbn}\\n\\nAdd to Wishlist?\\n(Cancel to add to Library)`);
-                        window.handleScannedISBN(isbn, addToWishlist);
+                        const addToWishlist = confirm(`ISBN: ${isbn}\\n\\nAdd to Library?\\n(Click Cancel to add to Wishlist instead)`);
+                        // Invert the logic: OK = add to library (false), Cancel = add to wishlist (true)
+                        window.handleScannedISBN(isbn, !addToWishlist);
                     }, 500);
 
                     return;

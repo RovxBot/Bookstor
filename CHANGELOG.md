@@ -5,6 +5,35 @@ All notable changes to Bookstor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.0.5] - 2025-10-19
+
+### Added
+- Netflix-style library UI with horizontal scrolling rows organised by reading status
+- Grid layout for search and filter results
+- Advanced search functionality with real-time filtering by title, author, and category
+- Status filter buttons (All Books, Reading, Want to Read, Finished)
+- Dynamic API integration management system via admin panel
+- Hardcover API integration support with GraphQL
+- Wishlist "Purchased" button to move books from wishlist to library
+- Optimised horizontal scrolling with 25x multiplier for trackpad
+- Shift+Scroll for alternative horizontal scrolling method
+
+### Changed
+- Library page now uses horizontal scrolling rows instead of grid by default
+- Search/filter results display in grid layout for better visibility
+- Improved barcode scanner dialog with clearer messaging
+- Enhanced scroll performance by removing smooth scrolling animation
+- Updated "Remove from Wishlist" to "Purchased" with shopping cart icon
+
+### Fixed
+- Vertical page scrolling now works correctly when hovering over book rows
+- Wishlist button functionality now works properly
+- Barcode scanner now correctly adds books to library or wishlist based on user choice
+
+### Removed
+- Removed all test scripts from repository (test_*.py files)
+- Removed duplicate ADMIN_PANEL.md documentation
+
 ## [v0.0.4] - 2025-10-18
 
 ### Fixed

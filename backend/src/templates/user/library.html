@@ -185,12 +185,21 @@
         gap: 1rem;
         overflow-x: auto;
         overflow-y: hidden;
-        scroll-behavior: smooth;
+        scroll-behavior: auto; /* Changed from smooth to auto for instant response */
         padding-bottom: 1rem;
         -webkit-overflow-scrolling: touch;
         position: relative;
         /* Prevent trackpad horizontal scroll from affecting multiple rows */
         overscroll-behavior-x: contain;
+    }
+
+    /* Grid Layout for Filtered/Searched Results */
+    .books-row.grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+        overflow-x: visible;
+        overflow-y: visible;
     }
 
     .books-row::-webkit-scrollbar {
@@ -459,10 +468,156 @@
         font-weight: 600;
         font-size: 1.125rem;
     }
+
+    /* Search and Filter Bar */
+    .search-filter-bar {
+        padding: 1.5rem 2rem;
+        background-color: var(--surface);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .search-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background-color: var(--background);
+        color: var(--text-primary);
+        font-size: 1rem;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-colour);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        font-size: 1.25rem;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background-color: var(--background);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+        background-color: var(--surface);
+    }
+
+    .filter-btn.active {
+        background-color: var(--primary-colour);
+        color: white;
+        border-color: var(--primary-colour);
+    }
+
+    .clear-filters-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        background-color: transparent;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .clear-filters-btn:hover {
+        color: var(--text-primary);
+    }
+
+    .search-results-info {
+        padding: 0.5rem 2rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .search-filter-bar {
+            padding: 1rem;
+        }
+
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-input-wrapper {
+            min-width: 100%;
+        }
+
+        .filter-buttons {
+            width: 100%;
+        }
+
+        .filter-btn {
+            flex: 1;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar">
+    <div class="search-container">
+        <div class="search-input-wrapper">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input
+                type="text"
+                id="librarySearch"
+                class="search-input"
+                placeholder="Search by title, author, or category..."
+                autocomplete="off"
+            >
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-status="all">All Books</button>
+            <button class="filter-btn" data-status="currently_reading">Reading</button>
+            <button class="filter-btn" data-status="want_to_read">Want to Read</button>
+            <button class="filter-btn" data-status="read">Finished</button>
+        </div>
+        <button class="clear-filters-btn" id="clearFilters" style="display: none;">
+            Clear Filters
+        </button>
+    </div>
+</div>
+<div class="search-results-info" id="searchResultsInfo" style="display: none;"></div>
+
 {% if books %}
     {% set currently_reading = books | selectattr('reading_status', 'equalto', 'currently_reading') | list %}
     {% set want_to_read = books | selectattr('reading_status', 'equalto', 'want_to_read') | list %}
@@ -666,6 +821,129 @@
 
 {% block extra_js %}
 <script>
+    // Search and Filter Functionality
+    const searchInput = document.getElementById('librarySearch');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const searchResultsInfo = document.getElementById('searchResultsInfo');
+    const librarySections = document.querySelectorAll('.library-section');
+    const libraryHero = document.querySelector('.library-hero');
+
+    let currentFilter = 'all';
+    let currentSearchTerm = '';
+
+    // Get all book cards with their data
+    const allBookCards = Array.from(document.querySelectorAll('.book-card')).map(card => {
+        const title = card.querySelector('.book-card-title')?.textContent.toLowerCase() || '';
+        const author = card.querySelector('.book-card-author')?.textContent.toLowerCase() || '';
+        const statusBadge = card.querySelector('.book-card-status');
+        let status = 'unknown';
+        if (statusBadge) {
+            if (statusBadge.classList.contains('status-currently_reading')) status = 'currently_reading';
+            else if (statusBadge.classList.contains('status-want_to_read')) status = 'want_to_read';
+            else if (statusBadge.classList.contains('status-read')) status = 'read';
+        }
+        return { element: card, title, author, status };
+    });
+
+    function applyFilters() {
+        let visibleCount = 0;
+        let filteredByStatus = 0;
+        let filteredBySearch = 0;
+        const isFiltering = currentFilter !== 'all' || currentSearchTerm;
+
+        allBookCards.forEach(({ element, title, author, status }) => {
+            let visible = true;
+
+            // Apply status filter
+            if (currentFilter !== 'all' && status !== currentFilter) {
+                visible = false;
+                filteredByStatus++;
+            }
+
+            // Apply search filter
+            if (currentSearchTerm && visible) {
+                const searchLower = currentSearchTerm.toLowerCase();
+                if (!title.includes(searchLower) && !author.includes(searchLower)) {
+                    visible = false;
+                    filteredBySearch++;
+                }
+            }
+
+            element.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        // Switch between row and grid layout
+        const bookRows = document.querySelectorAll('.books-row');
+        bookRows.forEach(row => {
+            if (isFiltering) {
+                row.classList.add('grid-layout');
+            } else {
+                row.classList.remove('grid-layout');
+            }
+        });
+
+        // Show/hide sections based on visible books
+        librarySections.forEach(section => {
+            const visibleBooks = section.querySelectorAll('.book-card:not([style*="display: none"])');
+            section.style.display = visibleBooks.length > 0 ? '' : 'none';
+        });
+
+        // Hide hero if filtering
+        if (libraryHero) {
+            libraryHero.style.display = isFiltering ? 'none' : '';
+        }
+
+        // Update results info
+        if (isFiltering) {
+            let infoText = `Showing ${visibleCount} of ${allBookCards.length} books`;
+            if (currentSearchTerm) {
+                infoText += ` matching "${currentSearchTerm}"`;
+            }
+            if (currentFilter !== 'all') {
+                const filterName = filterButtons[Array.from(filterButtons).findIndex(btn => btn.dataset.status === currentFilter)]?.textContent || currentFilter;
+                infoText += ` in ${filterName}`;
+            }
+            searchResultsInfo.textContent = infoText;
+            searchResultsInfo.style.display = '';
+            clearFiltersBtn.style.display = '';
+        } else {
+            searchResultsInfo.style.display = 'none';
+            clearFiltersBtn.style.display = 'none';
+        }
+    }
+
+    // Search input handler
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value.trim();
+            applyFilters();
+        });
+    }
+
+    // Filter button handlers
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.status;
+            applyFilters();
+        });
+    });
+
+    // Clear filters handler
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+            currentSearchTerm = '';
+            currentFilter = 'all';
+            if (searchInput) searchInput.value = '';
+            filterButtons.forEach(b => b.classList.remove('active'));
+            filterButtons[0].classList.add('active');
+            applyFilters();
+        });
+    }
+
     // Horizontal scroll for each row independently
     const bookRows = document.querySelectorAll('.books-row');
     const mainContent = document.querySelector('.main-content');
@@ -714,8 +992,9 @@
                     e.preventDefault();
                     e.stopPropagation();
 
-                    // Multiply by 3 for more noticeable scrolling
-                    const scrollAmount = e.deltaX * 3;
+                    // Multiply by 25 for very fast, responsive scrolling
+                    // This makes trackpad scrolling feel much more natural
+                    const scrollAmount = e.deltaX * 25;
                     currentHoveredRow.scrollLeft += scrollAmount;
                 } else {
                     // Not hovering over any row, prevent horizontal scroll entirely
@@ -725,6 +1004,20 @@
             }
         }, { passive: false, capture: true });
     }
+
+    // Add mouse wheel support for horizontal scrolling with Shift key
+    // This allows vertical scroll to work normally, but Shift+Scroll scrolls horizontally
+    bookRows.forEach((scrollContainer) => {
+        scrollContainer.addEventListener('wheel', (e) => {
+            // Only convert vertical to horizontal if Shift key is held
+            // This way normal vertical scrolling still works
+            if (e.shiftKey && Math.abs(e.deltaY) > 0) {
+                e.preventDefault();
+                // Use deltaY for horizontal scrolling with multiplier
+                scrollContainer.scrollLeft += e.deltaY * 2;
+            }
+        }, { passive: false });
+    });
 </script>
 {% endblock %}
 

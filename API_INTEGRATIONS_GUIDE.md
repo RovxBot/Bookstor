@@ -2,7 +2,14 @@
 
 ## Overview
 
-Bookstor now supports dynamic API integrations for book metadata fetching. You can add, configure, and manage multiple book APIs through the admin portal without modifying code.
+Bookstor supports dynamic API integrations for book metadata fetching. You can add, configure, and manage multiple book APIs through the admin portal without modifying code.
+
+**Currently Supported APIs**: Bookstor has been tested and confirmed to work with **3 API endpoints**:
+1. **Open Library** (no API key required)
+2. **Google Books** (optional API key for higher rate limits)
+3. **Hardcover** (API key required)
+
+While the system supports adding custom APIs, only these three have been fully tested and verified to work correctly.
 
 ## Features
 
@@ -10,7 +17,7 @@ Bookstor now supports dynamic API integrations for book metadata fetching. You c
 - **Priority-Based Querying**: Set priority to control which APIs are queried first
 - **Data Merging**: Automatically merges results from multiple APIs to get the most complete metadata
 - **Enable/Disable**: Toggle APIs on/off without deleting them
-- **Custom APIs**: Add your own book APIs with custom endpoints
+- **Tested APIs**: Three fully tested and working API integrations
 
 ## Accessing API Integrations
 
@@ -18,19 +25,29 @@ Bookstor now supports dynamic API integrations for book metadata fetching. You c
 2. Navigate to **API Integrations** from the sidebar or dashboard
 3. View, add, edit, or delete API integrations
 
-## Pre-Configured APIs
+## Tested and Supported APIs
 
-### Open Library
+### 1. Open Library
 - **Priority**: 1 (checked first)
-- **Base URL**: https://openlibrary.org
+- **Base URL**: `https://openlibrary.org`
 - **API Key Required**: No
 - **Status**: Enabled by default
+- **Coverage**: Good for older and classic books
 
-### Google Books API
+### 2. Google Books API
 - **Priority**: 2 (checked second)
-- **Base URL**: https://www.googleapis.com/books/v1/volumes
+- **Base URL**: `https://www.googleapis.com/books/v1/volumes`
 - **API Key Required**: Optional (recommended for higher rate limits)
 - **Status**: Enabled by default
+- **Coverage**: Excellent for modern books and comprehensive metadata
+
+### 3. Hardcover
+- **Priority**: 3 (checked third)
+- **Base URL**: `https://api.hardcover.app/v1/graphql`
+- **API Key Required**: Yes (free from hardcover.app)
+- **Status**: Must be added manually via admin panel
+- **Coverage**: Best for series information and community-driven data
+- **Special**: Uses GraphQL API
 
 ## Adding a New API Integration
 
@@ -74,15 +91,27 @@ Click **Save** to add the integration. It will be enabled by default.
 
 ### Getting API Keys
 
-#### Google Books API
+#### Google Books API (Optional)
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the "Books API"
 4. Create credentials (API Key)
 5. Copy the API key and paste it into Bookstor
 
-#### Other APIs
-Refer to the specific API's documentation for obtaining API keys.
+**Note**: Google Books works without an API key but has lower rate limits.
+
+#### Hardcover API (Required)
+1. Go to [Hardcover.app](https://hardcover.app/)
+2. Create a free account
+3. Navigate to Settings → API
+4. Generate an API key
+5. Add Hardcover integration in Bookstor admin panel:
+   - **Name**: `hardcover`
+   - **Display Name**: `Hardcover`
+   - **Base URL**: `https://api.hardcover.app/v1/graphql`
+   - **API Key**: Paste your Hardcover API key
+   - **Priority**: 3 (or your preference)
+   - **Requires API Key**: Check this box
 
 ## Priority System
 
@@ -104,12 +133,12 @@ The priority system determines the order in which APIs are queried:
 If you have:
 - Open Library (Priority 1)
 - Google Books (Priority 2)
-- Goodreads (Priority 3)
+- Hardcover (Priority 3)
 
 Bookstor will:
 1. Query Open Library first
 2. Query Google Books second
-3. Query Goodreads third
+3. Query Hardcover third
 4. Merge all results, preferring data from Open Library when available
 
 ## Enabling/Disabling APIs
@@ -132,9 +161,11 @@ This is useful for:
 
 **Note**: Deleting an integration does not affect existing book data in your library.
 
-## Custom API Integration
+## Custom API Integration (Experimental)
 
-You can add custom book APIs that follow common patterns. Bookstor will attempt to parse responses from:
+**Warning**: While Bookstor supports adding custom book APIs, only the three APIs listed above (Open Library, Google Books, Hardcover) have been fully tested and verified to work correctly. Custom APIs may require code modifications to work properly.
+
+If you want to experiment with custom APIs, Bookstor will attempt to parse responses that follow common patterns:
 
 ### Supported URL Patterns
 
@@ -195,6 +226,8 @@ Or as an array in `items`, `docs`, or `results`:
 }
 ```
 
+**Note**: Custom APIs may not work without code modifications. For best results, use the three tested APIs listed above.
+
 ## How Book Searches Work
 
 ### ISBN Lookup
@@ -254,11 +287,12 @@ If you're hitting rate limits:
 
 ## Best Practices
 
-1. **Set Priorities Wisely**: Put your most reliable/comprehensive API at Priority 1
-2. **Use API Keys**: When available, use API keys for better rate limits and reliability
-3. **Test New APIs**: Add new APIs with low priority first, then adjust after testing
-4. **Keep Backups**: Have multiple APIs enabled in case one goes down
+1. **Use Tested APIs**: Stick to the three tested APIs (Open Library, Google Books, Hardcover) for best results
+2. **Set Priorities Wisely**: Put your most reliable/comprehensive API at Priority 1
+3. **Use API Keys**: Add a Google Books API key for higher rate limits, and add Hardcover for best metadata coverage
+4. **Keep Multiple APIs Enabled**: Have at least 2-3 APIs enabled in case one goes down or doesn't have data for a specific book
 5. **Monitor Usage**: Check backend logs occasionally to ensure APIs are working correctly
+6. **Avoid Untested APIs**: Custom APIs may not work without code modifications
 
 ## Technical Details
 

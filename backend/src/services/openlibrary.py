@@ -102,8 +102,20 @@ class OpenLibraryService:
                 # Categories (subjects)
                 categories = doc.get('subject', [])[:5]  # Limit to first 5 subjects
 
-                # Cover image
-                thumbnail = await self.get_cover_by_isbn(isbn, size="L")
+                # Cover image - try multiple methods
+                thumbnail = None
+                # Method 1: Try cover_i from search results
+                cover_i = doc.get('cover_i')
+                if cover_i:
+                    thumbnail = f"{self.COVERS_URL}/id/{cover_i}-L.jpg"
+                # Method 2: Try ISBN-based cover
+                if not thumbnail:
+                    thumbnail = await self.get_cover_by_isbn(isbn, size="L")
+                # Method 3: Try edition cover
+                if not thumbnail and edition_data:
+                    covers = edition_data.get('covers', [])
+                    if covers:
+                        thumbnail = f"{self.COVERS_URL}/id/{covers[0]}-L.jpg"
 
                 # Series information
                 series_name, series_position = None, None
@@ -331,12 +343,17 @@ class OpenLibraryService:
             # Open Library covers API: https://covers.openlibrary.org/b/isbn/{isbn}-{size}.jpg
             cover_url = f"{self.COVERS_URL}/isbn/{isbn}-{size}.jpg"
 
-            # Check if the cover exists by making a HEAD request
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            # Check if the cover exists by making a HEAD request with follow_redirects
+            async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
                 response = await client.head(cover_url)
 
+                # Check if we got a valid image response
                 if response.status_code == 200:
-                    return cover_url
+                    content_type = response.headers.get('content-type', '')
+                    # Make sure it's actually an image, not a placeholder
+                    if 'image' in content_type:
+                        # Return the final URL after redirects
+                        return str(response.url)
 
                 return None
 

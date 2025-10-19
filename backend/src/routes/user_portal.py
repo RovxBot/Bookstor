@@ -250,9 +250,16 @@ async def book_detail_page(request: Request, book_id: int, db: Session = Depends
 async def settings_page(request: Request, db: Session = Depends(get_db)):
     """User settings page"""
     user = require_user(request, db)
-    
+
     return templates.TemplateResponse("user/settings.html", {
         "request": request,
         "user": user
     })
 
+
+@router.get("/test/isbn", response_class=HTMLResponse)
+async def test_isbn_page(request: Request):
+    """Test page for ISBN lookup"""
+    return templates.TemplateResponse("test_isbn.html", {
+        "request": request
+    })
