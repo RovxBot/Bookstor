@@ -282,86 +282,14 @@ class OpenLibraryService:
         """
         Search for books by title using Open Library API
         Returns: List of OpenLibraryBookInfo objects
+
+        Note: Open Library's search API doesn't reliably return ISBNs in search results.
+        Since ISBNs are required for proper data fetching, we return an empty list.
+        Use Google Books API for title search instead, which provides ISBNs.
         """
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                params = {
-                    'q': query,
-                    'limit': max_results
-                }
-                response = await client.get(f"{self.BASE_URL}/search.json", params=params)
-
-                if response.status_code != 200:
-                    return []
-
-                data = response.json()
-                docs = data.get('docs', [])
-
-                if not docs:
-                    return []
-
-                results = []
-                for doc in docs:
-                    # Extract basic information from search result
-                    title = doc.get('title', 'Unknown Title')
-                    subtitle = doc.get('subtitle')
-                    authors = doc.get('author_name', [])
-
-                    # Get ISBN
-                    isbn = None
-                    isbn_list = doc.get('isbn', [])
-                    if isbn_list:
-                        # Prefer ISBN-13 over ISBN-10
-                        for i in isbn_list:
-                            if len(i) == 13:
-                                isbn = i
-                                break
-                        if not isbn:
-                            isbn = isbn_list[0]
-
-                    # Publisher and published date
-                    publisher = doc.get('publisher', [None])[0] if doc.get('publisher') else None
-                    published_date = doc.get('publish_date', [None])[0] if doc.get('publish_date') else None
-                    if not published_date:
-                        published_date = str(doc.get('first_publish_year')) if doc.get('first_publish_year') else None
-
-                    # Page count
-                    page_count = doc.get('number_of_pages_median')
-
-                    # Categories (subjects)
-                    categories = doc.get('subject', [])[:5]  # Limit to first 5 subjects
-
-                    # Cover image
-                    thumbnail = None
-                    cover_i = doc.get('cover_i')
-                    if cover_i:
-                        thumbnail = f"{self.COVERS_URL}/id/{cover_i}-L.jpg"
-
-                    # Series information from title
-                    series_name, series_position = self._extract_series_from_title(title, subtitle)
-
-                    book_info = OpenLibraryBookInfo(
-                        title=title,
-                        subtitle=subtitle,
-                        authors=authors if authors else None,
-                        description=None,  # Not available in search results
-                        publisher=publisher,
-                        published_date=published_date,
-                        page_count=page_count,
-                        categories=categories if categories else None,
-                        thumbnail=thumbnail,
-                        isbn=isbn,
-                        series_name=series_name,
-                        series_position=series_position,
-                        edition=None,
-                        book_format=None
-                    )
-                    results.append(book_info)
-
-                return results
-        except Exception as e:
-            print(f"Error searching Open Library by title: {e}")
-            return []
+        # Open Library search doesn't provide ISBNs reliably, so we skip it for title search
+        # Google Books is the primary source for title/author search
+        return []
 
     async def search_series_books(self, series_name: str, limit: int = 20) -> List[dict]:
         """
