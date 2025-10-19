@@ -278,6 +278,19 @@ class OpenLibraryService:
         
         return None
     
+    async def search_by_title(self, query: str, max_results: int = 10) -> List[OpenLibraryBookInfo]:
+        """
+        Search for books by title using Open Library API
+        Returns: List of OpenLibraryBookInfo objects
+
+        Note: Open Library's search API doesn't reliably return ISBNs in search results.
+        Since ISBNs are required for proper data fetching, we return an empty list.
+        Use Google Books API for title search instead, which provides ISBNs.
+        """
+        # Open Library search doesn't provide ISBNs reliably, so we skip it for title search
+        # Google Books is the primary source for title/author search
+        return []
+
     async def search_series_books(self, series_name: str, limit: int = 20) -> List[dict]:
         """
         Search for all books in a series
