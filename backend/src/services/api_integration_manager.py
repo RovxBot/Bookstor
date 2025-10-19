@@ -3,6 +3,7 @@ Dynamic API Integration Manager
 Handles book metadata fetching from multiple configured APIs based on priority
 """
 import httpx
+import re
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from ..models import APIIntegration
@@ -20,7 +21,45 @@ class APIIntegrationManager:
             'google_books': google_books_service,
             'open_library': openlibrary_service
         }
-        self.hardcover_service = None  # Will be initialised with API key from DB
+        self.hardcover_service = None
+
+    @staticmethod
+    def normalise_series_name(series_name: Optional[str]) -> Optional[str]:
+        """
+        Normalise series names to ensure consistent grouping.
+        Removes common variations that cause the same series to be split:
+        - Leading "The ", "A ", "An "
+        - Trailing ", Book", ", Vol", ", Volume"
+        - Trailing "Series", "Saga", "Trilogy", "Chronicles"
+        - Extra whitespace
+
+        Examples:
+        - "The Rain Wild Chronicles" -> "Rain Wild Chronicles"
+        - "Rain Wild Chronicles" -> "Rain Wild Chronicles"
+        - "Liveship Traders, Book" -> "Liveship Traders"
+        - "The Lord of the Rings" -> "Lord of the Rings"
+        """
+        if not series_name:
+            return None
+
+        # Strip whitespace
+        normalised = series_name.strip()
+
+        # Remove leading articles (case-insensitive)
+        normalised = re.sub(r'^(The|A|An)\s+', '', normalised, flags=re.IGNORECASE)
+
+        # Remove trailing ", Book", ", Vol", ", Volume" etc
+        normalised = re.sub(r',\s*(Book|Vol\.?|Volume)\s*$', '', normalised, flags=re.IGNORECASE)
+
+        # Remove trailing "Series", "Saga", "Trilogy", "Chronicles" if standalone
+        # But keep them if they're part of the actual series name (e.g., "Rain Wild Chronicles")
+        # Only remove if preceded by "The" or if it's clearly appended
+        normalised = re.sub(r'\s+(Series|Saga|Trilogy)$', '', normalised, flags=re.IGNORECASE)
+
+        # Clean up extra whitespace
+        normalised = re.sub(r'\s+', ' ', normalised).strip()
+
+        return normalised if normalised else None  # Will be initialised with API key from DB
     
     def get_enabled_integrations(self, db: Session) -> List[APIIntegration]:
         """Get all enabled API integrations sorted by priority"""
@@ -282,6 +321,10 @@ class APIIntegrationManager:
                     combined = list(set(current_value + new_value))
                     setattr(merged, field, combined)
 
+        # Normalise series name for consistent grouping
+        if merged.series_name:
+            merged.series_name = self.normalise_series_name(merged.series_name)
+
         return merged
 
     def _normalize_isbn(self, isbn: str) -> str:
@@ -343,6 +386,12 @@ class APIIntegrationManager:
     def _convert_to_google_book_info(self, book_info: Any) -> GoogleBookInfo:
         """Convert any book info object to GoogleBookInfo"""
         # Extract common fields
+        series_name = getattr(book_info, 'series_name', None)
+
+        # Normalise series name for consistent grouping
+        if series_name:
+            series_name = self.normalise_series_name(series_name)
+
         data = {
             'title': getattr(book_info, 'title', None),
             'subtitle': getattr(book_info, 'subtitle', None),
@@ -354,7 +403,7 @@ class APIIntegrationManager:
             'categories': getattr(book_info, 'categories', None),
             'thumbnail': getattr(book_info, 'thumbnail', None),
             'isbn': getattr(book_info, 'isbn', None),
-            'series_name': getattr(book_info, 'series_name', None),
+            'series_name': series_name,
             'series_position': getattr(book_info, 'series_position', None),
             'edition': getattr(book_info, 'edition', None),
             'book_format': getattr(book_info, 'book_format', None),
