@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip to fix CVE-2025-8869
+RUN pip install --upgrade pip>=25.2
+
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
