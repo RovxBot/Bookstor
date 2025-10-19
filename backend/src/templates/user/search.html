@@ -479,36 +479,41 @@
 
     async function addBook(book, readingStatus, isWishlist) {
         try {
+            // Show loading indicator
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            // Prepare minimal data - the backend will fetch complete data via ISBN
             const bookData = {
                 title: book.title,
                 authors: book.authors ? book.authors.join(', ') : null,
-                description: book.description,
-                publisher: book.publisher,
-                published_date: book.published_date,
-                page_count: book.page_count,
-                categories: book.categories ? book.categories.join(', ') : null,
                 thumbnail: book.thumbnail,
-                isbn: book.isbn,
-                google_books_id: book.google_books_id,
+                isbn: book.isbn,  // This triggers full ISBN lookup on backend
                 reading_status: readingStatus,
                 is_wishlist: isWishlist
             };
-            
-            const response = await fetch('/api/books', {
+
+            // Use the new from-search endpoint that does ISBN lookup
+            const response = await fetch('/api/books/from-search', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 credentials: 'same-origin',
                 body: JSON.stringify(bookData)
             });
-            
+
+            loading.style.display = 'none';
+
             if (response.ok) {
                 const addedBook = await response.json();
                 alert(`"${book.title}" has been added to your ${isWishlist ? 'wishlist' : 'library'}!`);
                 window.location.href = `/app/book/${addedBook.id}`;
             } else {
-                alert('Failed to add book. It may already be in your library.');
+                const error = await response.json();
+                alert(`Failed to add book: ${error.detail || 'It may already be in your library.'}`);
             }
         } catch (error) {
+            document.getElementById('loading').style.display = 'none';
+            console.error('Add book error:', error);
             alert('Failed to add book. Please try again.');
         }
     }

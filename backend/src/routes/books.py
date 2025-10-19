@@ -126,6 +126,95 @@ async def add_book_by_isbn(
     return db_book
 
 
+@router.post("/from-search", response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
+async def add_book_from_search(
+    book: schemas.BookCreate,
+    current_user: models.User = Depends(auth.get_current_user_flexible),
+    db: Session = Depends(get_db)
+):
+    """
+    Add a book from search results.
+    If ISBN is provided, fetches complete data from APIs.
+    Otherwise, adds with provided data only.
+    """
+    # If ISBN is provided, do a full lookup to get complete data
+    if book.isbn:
+        # Check if book already exists for this user
+        existing_book = db.query(models.Book).filter(
+            models.Book.user_id == current_user.id,
+            models.Book.isbn == book.isbn
+        ).first()
+
+        if existing_book:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Book already exists in your library"
+            )
+
+        # Use API integration manager to search across all enabled APIs
+        book_info = await api_integration_manager.search_by_isbn(book.isbn, db)
+
+        if not book_info:
+            # If ISBN lookup fails, fall back to provided data
+            print(f"ISBN lookup failed for {book.isbn}, using provided data")
+            db_book = models.Book(
+                user_id=current_user.id,
+                **book.model_dump()
+            )
+        else:
+            # Extract data from merged book info
+            title = book_info.title or book.title or "Unknown Title"
+            subtitle = book_info.subtitle
+
+            # Authors
+            authors = None
+            if book_info.authors:
+                authors = ", ".join(book_info.authors)
+
+            # Categories
+            categories = None
+            if book_info.categories:
+                categories = ", ".join(book_info.categories)
+
+            # Series information
+            series_name = book_info.series_name
+            series_position = book_info.series_position
+
+            # Create book with complete data from API
+            db_book = models.Book(
+                user_id=current_user.id,
+                title=title,
+                subtitle=subtitle,
+                authors=authors,
+                description=book_info.description,
+                publisher=book_info.publisher,
+                published_date=book_info.published_date,
+                page_count=book_info.page_count,
+                categories=categories,
+                thumbnail=book_info.thumbnail,
+                isbn=book.isbn,
+                google_books_id=book_info.google_books_id,
+                series_name=series_name,
+                series_position=series_position,
+                book_format=book_info.book_format,
+                edition=book_info.edition,
+                reading_status=book.reading_status,
+                is_wishlist=book.is_wishlist
+            )
+    else:
+        # No ISBN provided, use the data from search results
+        db_book = models.Book(
+            user_id=current_user.id,
+            **book.model_dump()
+        )
+
+    db.add(db_book)
+    db.commit()
+    db.refresh(db_book)
+
+    return db_book
+
+
 @router.post("/", response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
 def add_book_manually(
     book: schemas.BookCreate,
@@ -137,11 +226,11 @@ def add_book_manually(
         user_id=current_user.id,
         **book.model_dump()
     )
-    
+
     db.add(db_book)
     db.commit()
     db.refresh(db_book)
-    
+
     return db_book
 
 
