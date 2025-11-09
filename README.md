@@ -151,7 +151,6 @@ Access the web app at `http://localhost:8000/app/library` (or your server IP)
 
 **Main Features:**
 
-
 1. **Library** - View your book collection organised by reading status
    - Currently Reading
    - Want to Read
