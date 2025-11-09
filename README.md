@@ -7,7 +7,7 @@
 
 A self-hosted personal library management system with barcode scanning, automatic metadata fetching, and a beautiful interface.
 
-**Current Version**: `v0.0.5` | [View Changelog](CHANGELOG.md)
+**Current Version**: `v0.0.6` | [View Changelog](CHANGELOG.md)
 
 ## What is Bookstor?
 
@@ -37,13 +37,14 @@ Bookstor helps you manage your personal book collection with ease. Scan barcodes
 ### Prerequisites
 - Docker and Docker Compose installed
 - A server or computer to host the application
+- Python 3.11+ (optional for generating secrets locally)
 - (Optional) Android device for mobile app
 
 ## Deployment
 
 ### 1. Deploy the Server
 
-**Option A: Using Docker Compose (Recommended)**
+#### Option A: Using Docker Compose (Recommended)
 
 ```bash
 # Clone the repository
@@ -54,8 +55,8 @@ cd Bookstor
 cp backend/.env.example backend/.env
 
 # Generate a secure SECRET_KEY (REQUIRED)
-python -c 'import secrets; print(secrets.token_urlsafe(32))'
-# Or use: openssl rand -base64 32
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+# Or: openssl rand -base64 32
 
 # Edit .env and add your SECRET_KEY
 nano backend/.env
@@ -66,7 +67,7 @@ docker-compose up -d
 
 The server will be available at `http://localhost:8000`
 
-**Option B: Using Pre-built Docker Image**
+#### Option B: Using Pre-built Docker Image
 
 ```bash
 # Pull the latest image
@@ -79,11 +80,21 @@ docker-compose up -d
 
 **Important:** The `SECRET_KEY` environment variable is required and must be at least 32 characters. The application will not start without it.
 
-### 2. Create Your First User
+### 2. Seed API Integrations (Optional but Recommended)
+
+To enable multi-source metadata lookups immediately, seed default integrations (Google Books & Open Library):
+
+```bash
+docker compose exec backend python seed_integrations.py
+```
+
+You can then add/adjust priorities or add Hardcover via the Admin Panel.
+
+### 3. Create Your First User
 
 The first user you create automatically becomes an admin.
 
-**Option A: Via API**
+#### Option A: Via API
 ```bash
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -93,7 +104,7 @@ curl -X POST http://localhost:8000/api/auth/register \
   }'
 ```
 
-**Option B: Via Admin Panel**
+#### Option B: Via Admin Panel
 1. Navigate to `http://localhost:8000/admin/login`
 2. Click "Create First Admin User"
 3. Fill in your email and password
@@ -105,9 +116,9 @@ curl -X POST http://localhost:8000/api/auth/register \
 - At least one lowercase letter
 - At least one number
 
-### 3. Get the Mobile App
+### 4. Get the Mobile App
 
-**Android**
+#### Android
 
 1. **Download the APK:**
    - [Latest Release](https://github.com/RovxBot/Bookstor/releases)
@@ -124,10 +135,10 @@ curl -X POST http://localhost:8000/api/auth/register \
    - Login with your credentials
    - Start scanning books!
 
-**iOS**
+#### iOS
 - Coming soon (maybe)
 
-**Web Browser**
+#### Web Browser
 - You can also use Bookstor directly in your web browser
 - Navigate to `http://localhost:8000/app/library` (or your server IP)
 - Full functionality available on desktop and mobile browsers
@@ -139,6 +150,7 @@ curl -X POST http://localhost:8000/api/auth/register \
 Access the web app at `http://localhost:8000/app/library` (or your server IP)
 
 **Main Features:**
+
 
 1. **Library** - View your book collection organised by reading status
    - Currently Reading
@@ -169,6 +181,7 @@ Access the web app at `http://localhost:8000/app/library` (or your server IP)
 ### Mobile App
 
 **Barcode Scanning:**
+
 1. Tap the floating scanner button (camera icon)
 2. Point camera at book's ISBN barcode
 3. Choose to add to Library or Wishlist
@@ -225,6 +238,9 @@ GOOGLE_BOOKS_API_KEY=your-google-books-api-key
 
 # CORS (optional)
 CORS_ORIGINS=*  # Use specific origins in production
+
+# Logging
+LOG_LEVEL=INFO
 ```
 
 ### API Integrations
@@ -237,17 +253,68 @@ Bookstor can fetch book metadata from multiple sources:
 
 Configure these in the Admin Panel under "API Integrations".
 
+### Database Constraints
+
+Bookstor enforces uniqueness for `(user_id, isbn)` at the database level to prevent duplicate entries of the same ISBN for a user. If you are upgrading from an older version you can apply the migration manually:
+
+```bash
+docker compose exec backend psql $DATABASE_URL -f migrations/add_unique_user_book_isbn.sql
+```
+
+### Running Tests
+
+Tests now run inside the backend container with `pytest`:
+
+```bash
+docker compose exec backend python -m pytest -q
+```
+
+Key test areas:
+- ISBN checksum validation & normalization (`test_isbn_utils.py`)
+- External integration probes (Google/Open Library)
+- Concurrency safety in integration manager
+
+### Concurrency & Data Merging (v0.0.6)
+
+As of `v0.0.6`, external API calls for ISBN and title searches execute concurrently using `asyncio.gather`, reducing latency when multiple integrations are enabled. Results are merged only when ISBNs match after normalization (supports ISBN-10 → ISBN-13 conversion). Non-matching responses are discarded to maintain data integrity.
+
+### Security Enhancements
+
+- Strict ISBN validation on add-by-ISBN routes
+- Unique constraint to avoid duplicates
+- Centralized logging configuration (`logging_config.py`)
+- Enforced secure `SECRET_KEY` validation via Pydantic
+
+### Caching (Optional Redis)
+
+Book metadata lookups by ISBN can be cached in Redis to reduce repeated external API calls. Enable caching by setting `REDIS_URL` in `.env` (default expected format: `redis://redis:6379/0`). If Redis is unavailable or not configured, the application operates normally without caching.
+
+Current cached objects:
+- Merged ISBN lookup results (safe merge payload)
+
+Current cached objects:
+
+- Merged ISBN lookup results (safe merge payload)
+Planned future cached objects:
+- Series gap computations (missing books per series per user)
+
+Planned future cached objects:
+
+- Series gap computations (missing books per series per user)
+Disable caching simply by omitting `REDIS_URL`.
+
 
 
 ## Troubleshooting
 
 ### Server Issues
 
-**Server won't start:**
+#### Server won't start:
 ```bash
 # Check logs
 docker-compose logs -f backend
 
+#### App crashes or login fails
 # Verify SECRET_KEY is set in .env
 cat backend/.env | grep SECRET_KEY
 
@@ -255,14 +322,14 @@ cat backend/.env | grep SECRET_KEY
 docker-compose restart
 ```
 
-**Cannot access web interface:**
+#### Cannot access web interface:
 1. Verify server is running: `docker-compose ps`
 2. Check firewall allows port 8000
 3. Try accessing from `http://localhost:8000`
 
 ### Mobile App Issues
 
-**Cannot connect to server:**
+#### Cannot connect to server:
 1. Ensure server is running: `docker-compose ps`
 2. Use your computer's local IP address (not localhost)
    - Find IP: `ip addr` (Linux) or `ipconfig` (Windows)
@@ -270,13 +337,13 @@ docker-compose restart
 3. Ensure firewall allows connections on port 8000
 4. Test connection: `curl http://YOUR_SERVER_IP:8000/`
 
-**Barcode scanner not working:**
+#### Barcode scanner not working:
 1. Grant camera permissions when prompted
 2. Ensure good lighting for scanning
 3. Hold barcode steady and at proper distance
 4. Try reinstalling the app
 
-**App crashes or login fails:**
+#### App crashes or login fails:
 1. Check server URL is correct (must end with `/api`)
 2. Verify server is accessible from your device
 3. Clear app data and try again
