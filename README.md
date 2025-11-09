@@ -306,8 +306,10 @@ Disable caching simply by omitting `REDIS_URL`.
 ```bash
 # Check logs
 docker-compose logs -f backend
+```
 
 #### App crashes or login fails
+```bash
 # Verify SECRET_KEY is set in .env
 cat backend/.env | grep SECRET_KEY
 
