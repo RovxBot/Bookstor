@@ -58,32 +58,28 @@
 
     .wishlist-badge {
         position: absolute;
-        top: 0.75rem;
-        right: 0.75rem;
-        background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 50%;
-        width: 2.5rem;
-        height: 2.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        z-index: 1;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: linear-gradient(135deg,#fbbf24 0%, #f59e0b 100%);
+        color:#fff;
+        border-radius: 12px;
+        padding: 0.35rem 0.6rem;
+        display:flex;
+        align-items:center;
+        gap:0.35rem;
+        font-size:0.7rem;
+        font-weight:600;
+        letter-spacing:.5px;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);
+        z-index:1;
     }
 
     [data-theme="dark"] .wishlist-badge {
-        background-color: rgba(28, 28, 30, 0.95);
+        background: linear-gradient(135deg,#d97706 0%, #b45309 100%);
     }
 
     @media (max-width: 768px) {
-        .wishlist-badge {
-            width: 2rem;
-            height: 2rem;
-            font-size: 1.2rem;
-            top: 0.5rem;
-            right: 0.5rem;
-        }
+        .wishlist-badge { font-size:0.65rem; }
     }
 
     .book-cover {
@@ -184,12 +180,17 @@
 <div class="books-grid">
     {% for book in books %}
     <a href="/app/book/{{ book.id }}" class="book-card">
-        <div class="wishlist-badge">⭐</div>
+        <div class="wishlist-badge" aria-label="Wishlist item">
+            <img src="/static/icons/star.svg" width="14" height="14" alt="" aria-hidden="true" loading="lazy" class="icon icon-warning">
+            <span>WISH</span>
+        </div>
         
         {% if book.thumbnail %}
         <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
         {% else %}
-        <div class="book-cover-placeholder">📖</div>
+        <div class="book-cover-placeholder" style="display:flex;align-items:center;justify-content:center;">
+            <img src="/static/icons/library.svg" width="36" height="36" alt="" aria-hidden="true" loading="lazy" style="filter:invert(1)">
+        </div>
         {% endif %}
         
         <div class="book-info">
@@ -206,7 +207,9 @@
 </div>
 {% else %}
 <div class="empty-state">
-    <div class="empty-icon">⭐</div>
+    <div class="empty-icon" style="display:flex;align-items:center;justify-content:center;">
+    <img src="/static/icons/star.svg" width="48" height="48" alt="" aria-hidden="true" loading="lazy" class="icon icon-warning">
+    </div>
     <div class="empty-title">Your wishlist is empty</div>
     <div class="empty-text">Add books you want to read to your wishlist</div>
     <a href="/app/search" class="btn btn-primary">Search for Books</a>

@@ -8,8 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>{% block title %}Bookstor{% endblock %}</title>
     <link rel="stylesheet" href="/static/theme.css?v=2">
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="/static/user.css?v=1">
     <style>
         /* User Portal Specific Styles */
         :root {
@@ -17,6 +16,17 @@
             --mobile-header-height: 60px;
             --mobile-bottom-nav-height: 60px;
         }
+
+        /* Icon colour utilities (applies CSS filter to monochrome SVG img assets) */
+        .icon { display:inline-block; vertical-align:middle; }
+        .icon-primary { filter: invert(40%) sepia(63%) saturate(2456%) hue-rotate(200deg) brightness(95%) contrast(92%); }
+        .icon-secondary { filter: invert(20%) sepia(6%) saturate(250%) hue-rotate(180deg) brightness(90%) contrast(85%); opacity:.8; }
+        .icon-success { filter: invert(51%) sepia(18%) saturate(1187%) hue-rotate(80deg) brightness(94%) contrast(92%); }
+        .icon-warning { filter: invert(78%) sepia(52%) saturate(671%) hue-rotate(359deg) brightness(103%) contrast(101%); }
+        .icon-danger { filter: invert(27%) sepia(86%) saturate(2473%) hue-rotate(342deg) brightness(95%) contrast(97%); }
+        .nav-item .icon { margin-right:.75rem; }
+        .mobile-nav-item .icon { margin-bottom:.25rem; }
+        .fab-scanner .icon { filter: invert(100%); }
 
         body {
             display: flex;
@@ -138,8 +148,14 @@
         }
 
         .logout-link:hover {
-            background-color: #fee2e2;
+            background-color: var(--danger-colour);
+            color: #fff;
         }
+    /* Icon colour utilities (extended) */
+    .icon-white { filter: invert(100%) brightness(105%); }
+    .admin-link .icon-white { filter: invert(100%) brightness(110%); }
+    .logout-link .icon-danger { filter: invert(27%) sepia(86%) saturate(2473%) hue-rotate(342deg) brightness(95%) contrast(97%); }
+    .logout-link:hover .icon-danger { filter: invert(100%) brightness(110%); }
 
         /* Main Content Area */
         .main-content {
@@ -385,16 +401,27 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Removed inline SVG sprite; using static FreeSVGIcons assets instead -->
+    <!-- Skip Links for Keyboard Navigation -->
+    <nav aria-label="Skip links" style="position:relative;">
+        <a href="#mainContent" class="skip-link">Skip to content</a>
+        <a href="#sidebar" class="skip-link">Skip to navigation</a>
+        <a href="#searchQuery" class="skip-link">Skip to search</a>
+    </nav>
     <!-- Mobile Header -->
     <header class="mobile-header">
-        <span class="mobile-header-logo">📚</span>
+        <span class="mobile-header-logo" style="display:flex;align-items:center;justify-content:center;">
+            <img src="/static/icons/library.svg" width="28" height="28" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
+        </span>
         <h1 class="mobile-header-title">Bookstor</h1>
     </header>
 
     <!-- Desktop Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Primary">
         <div class="sidebar-header">
-            <div class="sidebar-logo">📚</div>
+            <div class="sidebar-logo" style="display:flex;align-items:center;justify-content:center;">
+                <img src="/static/icons/library.svg" width="28" height="28" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
+            </div>
             <h2 class="sidebar-title">Bookstor</h2>
             <div class="sidebar-user">{{ user.email }}</div>
         </div>
@@ -402,31 +429,31 @@
         <nav class="sidebar-nav">
             <a href="/app/library" class="nav-item {% if request.url.path == '/app/library' %}active{% endif %}">
                 <span class="nav-icon">
-                    <ion-icon name="library"></ion-icon>
+                    <img src="/static/icons/library.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </span>
                 My Library
             </a>
             <a href="/app/wishlist" class="nav-item {% if request.url.path == '/app/wishlist' %}active{% endif %}">
                 <span class="nav-icon">
-                    <ion-icon name="star"></ion-icon>
+                    <img src="/static/icons/star.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </span>
                 Wishlist
             </a>
             <a href="/app/collections" class="nav-item {% if request.url.path == '/app/collections' %}active{% endif %}">
                 <span class="nav-icon">
-                    <ion-icon name="albums"></ion-icon>
+                    <img src="/static/icons/collection.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </span>
                 Collections
             </a>
             <a href="/app/search" class="nav-item {% if request.url.path == '/app/search' %}active{% endif %}">
                 <span class="nav-icon">
-                    <ion-icon name="search"></ion-icon>
+                    <img src="/static/icons/search.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </span>
                 Search & Add
             </a>
             <a href="/app/settings" class="nav-item {% if request.url.path == '/app/settings' %}active{% endif %}">
                 <span class="nav-icon">
-                    <ion-icon name="settings"></ion-icon>
+                    <img src="/static/icons/settings.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </span>
                 Settings
             </a>
@@ -436,14 +463,14 @@
             {% if user.is_admin %}
             <a href="/admin/dashboard" class="admin-link">
                 <span class="nav-icon">
-                    <ion-icon name="shield-checkmark"></ion-icon>
+                    <img src="/static/icons/admin.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-white">
                 </span>
                 Admin Portal
             </a>
             {% endif %}
             <a href="/app/logout" class="logout-link">
                 <span class="nav-icon">
-                    <ion-icon name="log-out-outline"></ion-icon>
+                    <img src="/static/icons/logout.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-danger">
                 </span>
                 Logout
             </a>
@@ -451,7 +478,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="mainContent" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 
@@ -459,23 +486,23 @@
     <nav class="mobile-bottom-nav">
         <div class="mobile-bottom-nav-container">
             <a href="/app/library" class="mobile-nav-item {% if request.url.path == '/app/library' %}active{% endif %}">
-                <ion-icon name="library"></ion-icon>
+                <img src="/static/icons/library.svg" width="20" height="20" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <span>Library</span>
             </a>
             <a href="/app/wishlist" class="mobile-nav-item {% if request.url.path == '/app/wishlist' %}active{% endif %}">
-                <ion-icon name="star"></ion-icon>
+                <img src="/static/icons/star.svg" width="20" height="20" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <span>Wishlist</span>
             </a>
             <a href="/app/collections" class="mobile-nav-item {% if request.url.path == '/app/collections' %}active{% endif %}">
-                <ion-icon name="albums"></ion-icon>
+                <img src="/static/icons/collection.svg" width="20" height="20" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <span>Collections</span>
             </a>
             <a href="/app/search" class="mobile-nav-item {% if request.url.path == '/app/search' %}active{% endif %}">
-                <ion-icon name="search"></ion-icon>
+                <img src="/static/icons/search.svg" width="20" height="20" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <span>Search</span>
             </a>
             <a href="/app/settings" class="mobile-nav-item {% if request.url.path == '/app/settings' %}active{% endif %}">
-                <ion-icon name="settings"></ion-icon>
+                <img src="/static/icons/settings.svg" width="20" height="20" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <span>Settings</span>
             </a>
         </div>
@@ -483,7 +510,7 @@
 
     <!-- Floating Action Button for Scanner (Mobile & Webcam) -->
     <button class="fab-scanner pulse" onclick="window.openScanner()" title="Scan Barcode (Mobile Camera or Webcam)">
-        <ion-icon name="barcode-outline"></ion-icon>
+    <img src="/static/icons/barcode.svg" width="24" height="24" alt="" aria-hidden="true" loading="lazy" class="icon icon-white">
     </button>
 
     <script>
@@ -606,7 +633,9 @@
                 text-align: center;
             `;
             loadingDiv.innerHTML = `
-                <div style="font-size: 2rem; margin-bottom: 1rem;">📚</div>
+                <div style="font-size: 2rem; margin-bottom: 1rem; display:flex;align-items:center;justify-content:center;">
+                    <img src="/static/icons/library.svg" width="32" height="32" alt="" aria-hidden="true" loading="lazy">
+                </div>
                 <div style="font-size: 1.2rem; color: var(--text-primary);">Adding book...</div>
                 <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">ISBN: ${isbn}</div>
             `;
@@ -938,7 +967,95 @@
         detectEnvironment();
         initTheme();
     </script>
+    <div id="toast-container" aria-live="polite" aria-atomic="true" style="position:fixed; top:1rem; right:1rem; display:flex; flex-direction:column; gap:0.5rem; z-index:20000; max-width:340px;"></div>
+    <script>
+        (function(){
+            const container = document.getElementById('toast-container');
+            window.showToast = function(message, {type='info', duration=4000, icon=null}={}) {
+                if(!container) return;
+                const toast = document.createElement('div');
+                const colours = {
+                    info: 'var(--surface)',
+                    success: 'var(--success-colour, #16a34a)',
+                    error: 'var(--danger-colour, #dc2626)',
+                    warning: '#d97706'
+                };
+                const bg = colours[type] || colours.info;
+                toast.setAttribute('role','status');
+                toast.style.cssText = `background:${bg}; color:#fff; padding:0.75rem 1rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.25); font-size:0.85rem; line-height:1.3; position:relative; overflow:hidden; display:flex; gap:0.75rem; align-items:flex-start; animation:fadeIn .25s ease;`;
+                const closeBtn = document.createElement('button');
+                closeBtn.type='button';
+                closeBtn.setAttribute('aria-label','Dismiss notification');
+                closeBtn.innerHTML='&times;';
+                closeBtn.style.cssText='background:transparent;border:none;color:inherit;font-size:1rem;cursor:pointer;position:absolute;top:4px;right:8px;line-height:1;';
+                closeBtn.addEventListener('click',()=> removeToast(toast));
+                const iconSpan = document.createElement('span');
+                iconSpan.style.cssText='font-size:1.1rem;line-height:1;';
+                iconSpan.textContent = icon || (type==='success'?'✓': type==='error'?'⨯': type==='warning'?'!':'ℹ');
+                const msgSpan = document.createElement('div');
+                msgSpan.style.flex='1';
+                msgSpan.textContent = message;
+                toast.appendChild(iconSpan);
+                toast.appendChild(msgSpan);
+                toast.appendChild(closeBtn);
+                container.appendChild(toast);
+                if(duration>0){ setTimeout(()=> removeToast(toast), duration); }
+                return toast;
+            };
+            function removeToast(toast){ if(!toast) return; toast.style.animation='fadeOut .25s ease'; setTimeout(()=> toast.remove(), 200); }
+            const style = document.createElement('style');
+            style.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}@keyframes fadeOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-6px);}}';
+            document.head.appendChild(style);
+        })();
+    </script>
+    <style>
+        .skip-link {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform: translateY(-200%);
+            background: var(--primary-colour);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 0 0 4px 0;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: transform .2s ease;
+        }
+        .skip-link:focus { transform: translateY(0); }
+        :focus-visible { outline: 3px solid var(--primary-colour); outline-offset: 2px; }
+        .nav-item:focus-visible, .mobile-nav-item:focus-visible, button:focus-visible, input:focus-visible, .fab-scanner:focus-visible { outline: 3px solid var(--primary-colour); outline-offset: 2px; }
+    </style>
     {% block extra_js %}{% endblock %}
+    <script>
+        // Intersection Observer for one-time fade-in without later fade-out
+        (function(){
+            const imgs = document.querySelectorAll('img.js-lazy-fade');
+            if(!('IntersectionObserver' in window)){ return; }
+            const observer = new IntersectionObserver((entries)=> {
+                entries.forEach(entry=> {
+                    if(entry.isIntersecting){
+                        entry.target.style.opacity='1';
+                        entry.target.style.transition='opacity .4s ease';
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {root:null, rootMargin:'0px 0px 150px 0px', threshold:0});
+            imgs.forEach(img=> {
+                if(!img.complete){
+                    img.style.opacity='0';
+                    img.addEventListener('load', ()=> {
+                        // if image already intersected it will have been set to 1
+                        if(img.style.opacity==='0') img.style.opacity='1';
+                    });
+                } else {
+                    // Already loaded – set visible immediately
+                    img.style.opacity='1';
+                }
+                observer.observe(img);
+            });
+        })();
+    </script>
 </body>
 </html>
 

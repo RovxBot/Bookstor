@@ -54,6 +54,45 @@
         padding: 1.5rem;
     }
 
+    .collection-progress-wrapper {
+        margin-top: 0.75rem;
+    }
+    .collection-progress-bar {
+        position: relative;
+        width: 100%;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+    .collection-progress-fill {
+        position: absolute;
+        top:0; left:0;
+        height:100%;
+        background: linear-gradient(90deg, var(--primary-colour), var(--primary-hover));
+        width:0%;
+        transition: width 0.6s ease;
+    }
+    .collection-progress-stats {
+        font-size: 0.7rem;
+        display:flex;
+        justify-content:space-between;
+        color: var(--text-secondary);
+        letter-spacing:0.5px;
+        font-weight:500;
+    }
+    .collection-missing-badge {
+        display:inline-block;
+        background: var(--danger-colour);
+        color:#fff;
+        font-size:0.6rem;
+        padding:0.25rem 0.45rem;
+        border-radius:0.4rem;
+        font-weight:600;
+        margin-left:0.4rem;
+    }
+
     .collection-name {
         font-size: 1.25rem;
         font-weight: 600;
@@ -97,6 +136,19 @@
 </style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    // Apply collection progress fill widths after DOM ready
+    (function(){
+        const fills = document.querySelectorAll('.collection-progress-fill[data-progress-width]');
+        fills.forEach(fill => {
+            const pct = parseFloat(fill.dataset.progressWidth || '0');
+            requestAnimationFrame(() => { fill.style.width = pct + '%'; });
+        });
+    })();
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="content-header">
     <h1>Collections</h1>
@@ -106,31 +158,52 @@
 {% if collections %}
 <div class="collections-grid">
     {% for series_name, books in collections.items() %}
-    <div class="collection-card" onclick="window.location.href='/app/collection/{{ series_name|urlencode }}'">
+    {# Attempt to parse an expected total from a pattern like 'Series Name (X of Y)' or metadata later; for now placeholder #}
+    {% set owned = books|length %}
+    {# Derive expected from max numeric series_position; fallback to owned #}
+    {% set positions = [] %}
+    {% for b in books %}
+        {% if b.series_position and b.series_position.isdigit() %}
+            {% set _ = positions.append(b.series_position|int) %}
+        {% endif %}
+    {% endfor %}
+    {% if positions and positions|length > 0 %}
+        {% set expected = positions|max %}
+    {% else %}
+        {% set expected = owned %}
+    {% endif %}
+    {% set missing = expected - owned %}
+    <div class="collection-card" onclick="window.location.href='/app/collection/{{ series_name|urlencode }}'" aria-label="Collection {{ series_name }}: {{ owned }} of {{ expected }} books owned{% if missing>0 %}, {{ missing }} missing{% endif %}">
         <div class="collection-covers">
             {% for book in books[:4] %}
                 {% if book.thumbnail %}
-                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="collection-cover">
+                <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="collection-cover js-lazy-fade" loading="lazy">
                 {% else %}
-                <div class="collection-cover-placeholder">
-                    <ion-icon name="albums"></ion-icon>
-                </div>
+                <div class="collection-cover-placeholder"></div>
                 {% endif %}
             {% endfor %}
 
             {% if books|length < 4 %}
                 {% for i in range(4 - books|length) %}
-                <div class="collection-cover-placeholder">
-                    <ion-icon name="albums"></ion-icon>
-                </div>
+                <div class="collection-cover-placeholder"></div>
                 {% endfor %}
             {% endif %}
         </div>
 
         <div class="collection-info">
-            <div class="collection-name">{{ series_name }}</div>
+            <div class="collection-name">{{ series_name }}
+                {% if missing > 0 %}<span class="collection-missing-badge" title="Missing {{ missing }} book{% if missing!=1 %}s{% endif %}">{{ missing }} missing</span>{% endif %}
+            </div>
             <div class="collection-count">
-                {{ books|length }} {% if books|length == 1 %}book{% else %}books{% endif %}
+                    <div class="collection-cover-placeholder" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                {% set pct = (owned / expected * 100) if expected > 0 else 0 %}
+                <div class="collection-progress-bar" aria-label="Progress {{ pct|round(0,'floor') }}%" role="progressbar" aria-valuenow="{{ pct|round(0,'floor') }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="collection-progress-fill" data-progress-width="{{ pct|round(2,'floor') }}"></div>
+                </div>
+                <div class="collection-progress-stats">
+                    <span>{{ owned }} / {{ expected }} owned</span>
+                    <span>{% if missing > 0 %}{{ missing }} missing{% else %}Complete{% endif %}</span>
+                </div>
             </div>
             {% if books[0].authors %}
             <div class="collection-author">by {{ books[0].authors.split(',')[0].strip() }}</div>
@@ -141,9 +214,7 @@
 </div>
 {% else %}
 <div class="empty-state">
-    <div class="empty-icon">
-        <ion-icon name="albums"></ion-icon>
-    </div>
+    <div class="empty-icon"></div>
     <div class="empty-title">No collections yet</div>
     <div class="empty-text">Add books from a series to see them grouped here</div>
     <a href="/app/search" class="btn btn-primary">Search for Books</a>
