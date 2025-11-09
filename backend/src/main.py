@@ -6,6 +6,7 @@ from .database import engine, Base
 from .config import settings
 import time
 import logging
+from . import logging_config  # noqa: F401 ensures logging configured early
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ init_db_with_retry()
 app = FastAPI(
     title="Bookstor API",
     description="Personal library management system with barcode scanning",
-    version="v0.0.5"
+    version="v0.0.6"
 )
 
 # Configure CORS for mobile app
@@ -71,7 +72,7 @@ def root():
     """Root endpoint"""
     return {
         "message": "Welcome to Bookstor API",
-        "version": "v0.0.5",
+    "version": "v0.0.6",
         "docs": "/docs",
         "app": "/app/login",
         "admin": "/admin/login"

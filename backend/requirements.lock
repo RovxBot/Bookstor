@@ -1,3 +1,4 @@
+# Auto-generated lock file (initial draft). Use pip-tools (pip-compile) to regenerate.
 fastapi==0.116.2
 uvicorn[standard]==0.27.0
 sqlalchemy==2.0.25
@@ -5,17 +6,14 @@ psycopg2-binary==2.9.9
 alembic==1.13.1
 pydantic==2.5.3
 pydantic-settings==2.1.0
-pydantic[email]==2.5.3
 python-dotenv==1.0.0
 httpx==0.26.0
 PyJWT==2.10.1
 passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 python-multipart==0.0.18
-msal==1.31.1
 jinja2==3.1.6
 itsdangerous==2.1.2
 pytest==8.2.0
 pytest-asyncio==0.23.6
 redis==5.0.4
-

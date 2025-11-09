@@ -7,6 +7,7 @@ from ..database import get_db
 from ..services.google_books import google_books_service
 from ..services.openlibrary import openlibrary_service
 from ..services.api_integration_manager import api_integration_manager
+from ..utils.isbn import validate_isbn
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -48,10 +49,19 @@ async def add_book_by_isbn(
     db: Session = Depends(get_db)
 ):
     """Add a book to library by scanning ISBN - uses all enabled API integrations"""
+    # Validate ISBN checksum/format first
+    try:
+        validated_isbn = validate_isbn(isbn_lookup.isbn)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid ISBN format or checksum"
+        )
+
     # Check if book already exists for this user
     existing_book = db.query(models.Book).filter(
         models.Book.user_id == current_user.id,
-        models.Book.isbn == isbn_lookup.isbn
+        models.Book.isbn == validated_isbn
     ).first()
 
     if existing_book:
@@ -61,7 +71,7 @@ async def add_book_by_isbn(
         )
 
     # Use API integration manager to search across all enabled APIs
-    book_info = await api_integration_manager.search_by_isbn(isbn_lookup.isbn, db)
+    book_info = await api_integration_manager.search_by_isbn(validated_isbn, db)
 
     if not book_info:
         raise HTTPException(
@@ -100,7 +110,7 @@ async def add_book_by_isbn(
     # Create book entry
     db_book = models.Book(
         user_id=current_user.id,
-        isbn=isbn_lookup.isbn,
+        isbn=validated_isbn,
         google_books_id=google_books_id,
         title=title,
         subtitle=subtitle,
@@ -137,50 +147,39 @@ async def add_book_from_search(
     If ISBN is provided, fetches complete data from APIs.
     Otherwise, adds with provided data only.
     """
-    # If ISBN is provided, do a full lookup to get complete data
     if book.isbn:
-        # Check if book already exists for this user
+        # Validate ISBN
+        try:
+            validated_isbn_search = validate_isbn(book.isbn)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid ISBN format or checksum"
+            )
+
         existing_book = db.query(models.Book).filter(
             models.Book.user_id == current_user.id,
-            models.Book.isbn == book.isbn
+            models.Book.isbn == validated_isbn_search
         ).first()
-
         if existing_book:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Book already exists in your library"
             )
 
-        # Use API integration manager to search across all enabled APIs
-        book_info = await api_integration_manager.search_by_isbn(book.isbn, db)
-
+        book_info = await api_integration_manager.search_by_isbn(validated_isbn_search, db)
         if not book_info:
-            # If ISBN lookup fails, fall back to provided data
-            print(f"ISBN lookup failed for {book.isbn}, using provided data")
+            # Fallback: use provided data
             db_book = models.Book(
                 user_id=current_user.id,
-                **book.model_dump()
+                **book.model_dump(exclude={"isbn"}),
+                isbn=validated_isbn_search
             )
         else:
-            # Extract data from merged book info
             title = book_info.title or book.title or "Unknown Title"
             subtitle = book_info.subtitle
-
-            # Authors
-            authors = None
-            if book_info.authors:
-                authors = ", ".join(book_info.authors)
-
-            # Categories
-            categories = None
-            if book_info.categories:
-                categories = ", ".join(book_info.categories)
-
-            # Series information
-            series_name = book_info.series_name
-            series_position = book_info.series_position
-
-            # Create book with complete data from API
+            authors = ", ".join(book_info.authors) if book_info.authors else None
+            categories = ", ".join(book_info.categories) if book_info.categories else None
             db_book = models.Book(
                 user_id=current_user.id,
                 title=title,
@@ -192,17 +191,16 @@ async def add_book_from_search(
                 page_count=book_info.page_count,
                 categories=categories,
                 thumbnail=book_info.thumbnail,
-                isbn=book.isbn,
+                isbn=validated_isbn_search,
                 google_books_id=book_info.google_books_id,
-                series_name=series_name,
-                series_position=series_position,
+                series_name=book_info.series_name,
+                series_position=book_info.series_position,
                 book_format=book_info.book_format,
                 edition=book_info.edition,
                 reading_status=book.reading_status,
                 is_wishlist=book.is_wishlist
             )
     else:
-        # No ISBN provided, use the data from search results
         db_book = models.Book(
             user_id=current_user.id,
             **book.model_dump()
@@ -211,7 +209,6 @@ async def add_book_from_search(
     db.add(db_book)
     db.commit()
     db.refresh(db_book)
-
     return db_book
 
 

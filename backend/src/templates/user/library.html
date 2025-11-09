@@ -1,809 +1,14 @@
 {% extends "user/base.html" %}
 
 {% block title %}My Library - Bookstor{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Netflix-inspired Hero Section */
-    .library-hero {
-        position: relative;
-        height: 70vh;
-        min-height: 500px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, var(--background) 100%);
-        overflow: hidden;
-        margin-bottom: 2rem;
-    }
-
-    .hero-background {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        filter: blur(8px);
-        transform: scale(1.1);
-    }
-
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%),
-                    linear-gradient(to top, var(--background) 0%, transparent 50%);
-    }
-
-    .hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 4rem 2rem;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        gap: 3rem;
-    }
-
-    .hero-cover {
-        width: 300px;
-        height: 450px;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-
-    .hero-info {
-        flex: 1;
-        color: white;
-    }
-
-    .hero-badge {
-        display: inline-block;
-        background: var(--primary-colour);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .hero-title {
-        font-size: 3.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        line-height: 1.1;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .hero-author {
-        font-size: 1.5rem;
-        opacity: 0.9;
-        margin-bottom: 1.5rem;
-    }
-
-    .hero-meta {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-        font-size: 1rem;
-        opacity: 0.9;
-    }
-
-    .hero-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .hero-description {
-        font-size: 1.125rem;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-        max-width: 700px;
-        opacity: 0.9;
-    }
-
-    .hero-actions {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .hero-btn {
-        padding: 1rem 2rem;
-        font-size: 1.125rem;
-        font-weight: 600;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        transition: all 0.3s;
-        text-decoration: none;
-    }
-
-    .hero-btn-primary {
-        background: white;
-        color: black;
-    }
-
-    .hero-btn-primary:hover {
-        background: rgba(255,255,255,0.8);
-        transform: scale(1.05);
-    }
-
-    .hero-btn-secondary {
-        background: rgba(255,255,255,0.2);
-        color: white;
-        backdrop-filter: blur(10px);
-    }
-
-    .hero-btn-secondary:hover {
-        background: rgba(255,255,255,0.3);
-    }
-
-    /* Netflix-style Rows */
-    .library-section {
-        margin-bottom: 3rem;
-        padding: 0 2rem;
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .section-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .section-view-all {
-        color: var(--primary-colour);
-        text-decoration: none;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: opacity 0.3s;
-    }
-
-    .section-view-all:hover {
-        opacity: 0.8;
-    }
-
-    /* Horizontal Scrolling Container */
-    .books-row {
-        display: flex;
-        gap: 1rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scroll-behavior: auto; /* Changed from smooth to auto for instant response */
-        padding-bottom: 1rem;
-        -webkit-overflow-scrolling: touch;
-        position: relative;
-        /* Prevent trackpad horizontal scroll from affecting multiple rows */
-        overscroll-behavior-x: contain;
-    }
-
-    /* Grid Layout for Filtered/Searched Results */
-    .books-row.grid-layout {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1.5rem;
-        overflow-x: visible;
-        overflow-y: visible;
-    }
-
-    .books-row::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    .books-row::-webkit-scrollbar-track {
-        background: var(--surface);
-        border-radius: 4px;
-    }
-
-    .books-row::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 4px;
-    }
-
-    .books-row::-webkit-scrollbar-thumb:hover {
-        background: var(--text-secondary);
-    }
-
-    /* Netflix-style Book Card */
-    .book-card {
-        flex: 0 0 200px;
-        background-color: var(--surface);
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        text-decoration: none;
-        color: inherit;
-        position: relative;
-    }
-
-    .book-card:hover {
-        transform: scale(1.05);
-        z-index: 10;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .book-card:hover .book-card-overlay {
-        opacity: 1;
-    }
-
-    .book-cover {
-        width: 100%;
-        height: 300px;
-        object-fit: cover;
-        background-color: var(--background);
-        display: block;
-    }
-
-    .book-cover-placeholder {
-        width: 100%;
-        height: 300px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 4rem;
-    }
-
-    /* Hover Overlay */
-    .book-card-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-        padding: 1.5rem 1rem 1rem;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-
-    .book-card-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: white;
-        margin-bottom: 0.25rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .book-card-author {
-        font-size: 0.8rem;
-        color: rgba(255,255,255,0.8);
-        margin-bottom: 0.5rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .book-card-meta {
-        display: flex;
-        gap: 0.75rem;
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.7);
-    }
-
-    .book-card-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    /* Edit Cover Icon */
-    .edit-cover-icon {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        width: 32px;
-        height: 32px;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: all 0.3s;
-        cursor: pointer;
-        z-index: 5;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .edit-cover-icon:hover {
-        background: rgba(0, 0, 0, 0.9);
-        border-color: var(--primary-colour);
-        transform: scale(1.1);
-    }
-
-    .book-card:hover .edit-cover-icon {
-        opacity: 1;
-    }
-
-    .edit-cover-icon ion-icon {
-        font-size: 18px;
-        color: white;
-    }
-
-    /* Cover Art Selector Modal */
-    .cover-selector-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(10px);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .cover-selector-modal.active {
-        display: flex;
-    }
-
-    .cover-selector-content {
-        background: var(--surface);
-        border-radius: 16px;
-        max-width: 900px;
-        width: 100%;
-        max-height: 80vh;
-        overflow-y: auto;
-        padding: 2rem;
-        position: relative;
-    }
-
-    .cover-selector-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .cover-selector-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .cover-selector-close {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--background);
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-    }
-
-    .cover-selector-close:hover {
-        background: var(--border);
-        transform: scale(1.1);
-    }
-
-    .cover-selector-close ion-icon {
-        font-size: 24px;
-        color: var(--text-primary);
-    }
-
-    .cover-options-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .cover-option {
-        cursor: pointer;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all 0.3s;
-        border: 3px solid transparent;
-        position: relative;
-    }
-
-    .cover-option:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    .cover-option.selected {
-        border-color: var(--primary-colour);
-        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
-    }
-
-    .cover-option img {
-        width: 100%;
-        height: 270px;
-        object-fit: cover;
-        display: block;
-    }
-
-    .cover-option-label {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-        padding: 1rem 0.5rem 0.5rem;
-        font-size: 0.75rem;
-        color: white;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .cover-selector-actions {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-
-    .cover-selector-btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.95rem;
-    }
-
-    .cover-selector-btn-cancel {
-        background: var(--background);
-        color: var(--text-primary);
-    }
-
-    .cover-selector-btn-cancel:hover {
-        background: var(--border);
-    }
-
-    .cover-selector-btn-save {
-        background: var(--primary-colour);
-        color: white;
-    }
-
-    .cover-selector-btn-save:hover {
-        background: var(--primary-hover);
-    }
-
-    .cover-selector-btn-save:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .cover-selector-loading {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-secondary);
-    }
-
-    .cover-selector-loading ion-icon {
-        font-size: 48px;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    /* Status Badge on Card */
-    .book-card-status {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        backdrop-filter: blur(10px);
-    }
-
-    .status-want_to_read {
-        background-color: rgba(59, 130, 246, 0.9);
-        color: white;
-    }
-
-    .status-currently_reading {
-        background-color: rgba(34, 197, 94, 0.9);
-        color: white;
-    }
-
-    .status-read {
-        background-color: rgba(139, 92, 246, 0.9);
-        color: white;
-    }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-        .library-hero {
-            height: 50vh;
-            min-height: 400px;
-        }
-
-        .hero-content {
-            flex-direction: column;
-            padding: 2rem 1rem;
-            text-align: center;
-        }
-
-        .hero-cover {
-            width: 200px;
-            height: 300px;
-        }
-
-        .hero-title {
-            font-size: 2rem;
-        }
-
-        .hero-author {
-            font-size: 1.125rem;
-        }
-
-        .hero-description {
-            font-size: 1rem;
-            max-width: 100%;
-        }
-
-        .hero-actions {
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .hero-btn {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .library-section {
-            padding: 0 1rem;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-        }
-
-        .book-card {
-            flex: 0 0 150px;
-        }
-
-        .book-cover {
-            height: 225px;
-        }
-
-        .book-cover-placeholder {
-            height: 225px;
-            font-size: 3rem;
-        }
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: var(--text-secondary);
-    }
-
-    .empty-state-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .empty-state-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
-    }
-
-    .empty-state-text {
-        font-size: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-    }
-
-    .empty-icon {
-        font-size: 5rem;
-        margin-bottom: 1rem;
-    }
-
-    .empty-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-text {
-        color: var(--text-secondary);
-        margin-bottom: 2rem;
-    }
-
-    .stats-bar {
-        display: flex;
-        gap: 2rem;
-        padding: 1rem 2rem;
-        background-color: var(--surface);
-        border-bottom: 1px solid var(--border);
-    }
-
-    .stat-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .stat-label {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-    }
-
-    .stat-value {
-        color: var(--primary-colour);
-        font-weight: 600;
-        font-size: 1.125rem;
-    }
-
-    /* Search and Filter Bar */
-    .search-filter-bar {
-        padding: 1.5rem 2rem;
-        background-color: var(--surface);
-        border-bottom: 1px solid var(--border);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    .search-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .search-input-wrapper {
-        flex: 1;
-        min-width: 300px;
-        position: relative;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background-color: var(--background);
-        color: var(--text-primary);
-        font-size: 1rem;
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: var(--primary-colour);
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-        font-size: 1.25rem;
-    }
-
-    .filter-buttons {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .filter-btn {
-        padding: 0.5rem 1rem;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background-color: var(--background);
-        color: var(--text-primary);
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .filter-btn:hover {
-        background-color: var(--surface);
-    }
-
-    .filter-btn.active {
-        background-color: var(--primary-colour);
-        color: white;
-        border-color: var(--primary-colour);
-    }
-
-    .clear-filters-btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 6px;
-        background-color: transparent;
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .clear-filters-btn:hover {
-        color: var(--text-primary);
-    }
-
-    .search-results-info {
-        padding: 0.5rem 2rem;
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-    }
-
-    @media (max-width: 768px) {
-        .search-filter-bar {
-            padding: 1rem;
-        }
-
-        .search-container {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .search-input-wrapper {
-            min-width: 100%;
-        }
-
-        .filter-buttons {
-            width: 100%;
-        }
-
-        .filter-btn {
-            flex: 1;
-        }
-    }
-</style>
-{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block content %}
 <!-- Search and Filter Bar -->
 <div class="search-filter-bar">
     <div class="search-container">
         <div class="search-input-wrapper">
-            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <img src="/static/icons/search.svg" width="18" height="18" alt="" aria-hidden="true" class="search-icon" loading="lazy">
             <input
                 type="text"
                 id="librarySearch"
@@ -830,228 +35,110 @@
     {% set want_to_read = books | selectattr('reading_status', 'equalto', 'want_to_read') | list %}
     {% set read_books = books | selectattr('reading_status', 'equalto', 'read') | list %}
 
-    <!-- Hero Section with Featured Book -->
     {% if currently_reading %}
-    {% set featured = currently_reading[0] %}
-    <div class="library-hero">
-        {% if featured.thumbnail %}
-        <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-background">
-        {% endif %}
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
+        {% set featured = currently_reading[0] %}
+        <div class="library-hero" id="featuredHero">
             {% if featured.thumbnail %}
-            <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-cover">
-            {% else %}
-            <div class="hero-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 6rem;">📚</div>
+            <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-background">
             {% endif %}
-            <div class="hero-info">
-                <div class="hero-badge">Currently Reading</div>
-                <h1 class="hero-title">{{ featured.title }}</h1>
-                {% if featured.authors %}
-                <div class="hero-author">by {{ featured.authors }}</div>
-                {% endif %}
-                <div class="hero-meta">
-                    {% if featured.published_date %}
-                    <div class="hero-meta-item">
-                        <ion-icon name="calendar-outline"></ion-icon>
-                        {{ featured.published_date[:4] }}
-                    </div>
-                    {% endif %}
-                    {% if featured.page_count %}
-                    <div class="hero-meta-item">
-                        <ion-icon name="document-text-outline"></ion-icon>
-                        {{ featured.page_count }} pages
-                    </div>
-                    {% endif %}
-                    {% if featured.book_format %}
-                    <div class="hero-meta-item">
-                        <ion-icon name="albums-outline"></ion-icon>
-                        {{ featured.book_format }}
-                    </div>
-                    {% endif %}
-                </div>
-                {% if featured.description %}
-                <div class="hero-description">
-                    {{ featured.description[:300] }}{% if featured.description|length > 300 %}...{% endif %}
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                {% if featured.thumbnail %}
+                <img src="{{ featured.thumbnail }}" alt="{{ featured.title }}" class="hero-cover" loading="lazy">
+                {% else %}
+                <div class="hero-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem; color:#fff;">
+                    <img src="/static/icons/library.svg" width="48" height="48" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 </div>
                 {% endif %}
-                <div class="hero-actions">
-                    <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-primary">
-                        <ion-icon name="book-outline"></ion-icon>
-                        View Details
-                    </a>
-                    <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-secondary">
-                        <ion-icon name="information-circle-outline"></ion-icon>
-                        More Info
-                    </a>
+                <div class="hero-info">
+                    <div class="hero-badge">Currently Reading</div>
+                    <h1 class="hero-title">{{ featured.title }}</h1>
+                    {% if featured.authors %}
+                    <div class="hero-author">by {{ featured.authors }}</div>
+                    {% endif %}
+                    <div class="hero-meta">
+                        {% if featured.published_date %}
+                        <div class="hero-meta-item">{{ featured.published_date[:4] }}</div>
+                        {% endif %}
+                        {% if featured.page_count %}
+                        <div class="hero-meta-item">{{ featured.page_count }} pages</div>
+                        {% endif %}
+                        {% if featured.book_format %}
+                        <div class="hero-meta-item">{{ featured.book_format }}</div>
+                        {% endif %}
+                    </div>
+                    {% if featured.description %}
+                    <div class="hero-description">{{ featured.description[:300] }}{% if featured.description|length > 300 %}...{% endif %}</div>
+                    {% endif %}
+                    <div class="hero-actions">
+                        <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-primary">View Details</a>
+                        <a href="/app/book/{{ featured.id }}" class="hero-btn hero-btn-secondary">More Info</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     {% endif %}
 
-    <!-- Currently Reading Section -->
-    {% if currently_reading %}
-    <div class="library-section">
+    <!-- Unified Books Grid -->
+    <div class="library-section" id="libraryUnified" aria-labelledby="libraryUnifiedTitle">
         <div class="section-header">
-            <h2 class="section-title">Continue Reading</h2>
-            <span class="section-view-all">{{ currently_reading|length }} book{% if currently_reading|length != 1 %}s{% endif %}</span>
+            <h2 class="section-title" id="libraryUnifiedTitle">Your Library</h2>
+            <span class="section-view-all">{{ books|length }} total</span>
         </div>
-        <div class="books-row">
-            {% for book in currently_reading %}
-            <div class="book-card" style="position: relative;">
-                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
+        <div class="books-row grid-layout" id="booksUnifiedGrid">
+            {% for book in books %}
+            <div class="book-card" data-status="{{ book.reading_status }}" style="position:relative;">
+                <a href="/app/book/{{ book.id }}" style="display:block; text-decoration:none; color:inherit;">
                     {% if book.thumbnail %}
-                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
+                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover js-lazy-fade" loading="lazy">
                     {% else %}
-                    <div class="book-cover-placeholder">📚</div>
+                    <div class="book-cover-placeholder" style="display:flex;align-items:center;justify-content:center;">
+                        <img src="/static/icons/library.svg" width="36" height="36" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
+                    </div>
                     {% endif %}
-                    <div class="book-card-status status-currently_reading">Reading</div>
-                    <div class="book-card-overlay">
-                        <div class="book-card-title">{{ book.title }}</div>
-                        {% if book.authors %}
-                        <div class="book-card-author">{{ book.authors }}</div>
-                        {% endif %}
-                        <div class="book-card-meta">
-                            {% if book.page_count %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="document-text-outline"></ion-icon>
-                                {{ book.page_count }}p
-                            </div>
-                            {% endif %}
-                            {% if book.book_format %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="albums-outline"></ion-icon>
-                                {{ book.book_format }}
-                            </div>
-                            {% endif %}
-                        </div>
+                    {% if book.reading_status == 'currently_reading' %}
+                        <div class="book-card-status status-currently_reading">Reading</div>
+                    {% elif book.reading_status == 'want_to_read' %}
+                        <div class="book-card-status status-want_to_read">Want to Read</div>
+                    {% elif book.reading_status == 'read' %}
+                        <div class="book-card-status status-read">Read</div>
+                    {% endif %}
+                    <div class="book-card-title">{{ book.title }}</div>
+                    {% if book.authors %}<div class="book-card-author">{{ book.authors }}</div>{% endif %}
+                    <div class="book-card-meta">
+                        {% if book.page_count %}<div class="book-card-meta-item">{{ book.page_count }}p</div>{% endif %}
+                        {% if book.book_format %}<div class="book-card-meta-item">{{ book.book_format }}</div>{% endif %}
                     </div>
                 </a>
-                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
-                    <ion-icon name="create-outline"></ion-icon>
-                </div>
+                <button type="button" class="edit-cover-icon" data-book-id="{{ book.id }}" aria-label="Edit cover art"><img src="/static/icons/edit.svg" width="16" height="16" alt="" aria-hidden="true" loading="lazy" class="icon icon-secondary"></button>
             </div>
             {% endfor %}
         </div>
     </div>
-    {% endif %}
-
-    <!-- Want to Read Section -->
-    {% if want_to_read %}
-    <div class="library-section">
-        <div class="section-header">
-            <h2 class="section-title">Want to Read</h2>
-            <span class="section-view-all">{{ want_to_read|length }} book{% if want_to_read|length != 1 %}s{% endif %}</span>
-        </div>
-        <div class="books-row">
-            {% for book in want_to_read %}
-            <div class="book-card" style="position: relative;">
-                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
-                    {% if book.thumbnail %}
-                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-                    {% else %}
-                    <div class="book-cover-placeholder">📚</div>
-                    {% endif %}
-                    <div class="book-card-status status-want_to_read">Want to Read</div>
-                    <div class="book-card-overlay">
-                        <div class="book-card-title">{{ book.title }}</div>
-                        {% if book.authors %}
-                        <div class="book-card-author">{{ book.authors }}</div>
-                        {% endif %}
-                        <div class="book-card-meta">
-                            {% if book.page_count %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="document-text-outline"></ion-icon>
-                                {{ book.page_count }}p
-                            </div>
-                            {% endif %}
-                            {% if book.book_format %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="albums-outline"></ion-icon>
-                                {{ book.book_format }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
-                    <ion-icon name="create-outline"></ion-icon>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Read Books Section -->
-    {% if read_books %}
-    <div class="library-section">
-        <div class="section-header">
-            <h2 class="section-title">Finished Reading</h2>
-            <span class="section-view-all">{{ read_books|length }} book{% if read_books|length != 1 %}s{% endif %}</span>
-        </div>
-        <div class="books-row">
-            {% for book in read_books %}
-            <div class="book-card" style="position: relative;">
-                <a href="/app/book/{{ book.id }}" style="display: block; text-decoration: none; color: inherit;">
-                    {% if book.thumbnail %}
-                    <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover">
-                    {% else %}
-                    <div class="book-cover-placeholder">📚</div>
-                    {% endif %}
-                    <div class="book-card-status status-read">Read</div>
-                    <div class="book-card-overlay">
-                        <div class="book-card-title">{{ book.title }}</div>
-                        {% if book.authors %}
-                        <div class="book-card-author">{{ book.authors }}</div>
-                        {% endif %}
-                        <div class="book-card-meta">
-                            {% if book.page_count %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="document-text-outline"></ion-icon>
-                                {{ book.page_count }}p
-                            </div>
-                            {% endif %}
-                            {% if book.book_format %}
-                            <div class="book-card-meta-item">
-                                <ion-icon name="albums-outline"></ion-icon>
-                                {{ book.book_format }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                <div class="edit-cover-icon" onclick="event.preventDefault(); event.stopPropagation(); openCoverSelector({{ book.id }});">
-                    <ion-icon name="create-outline"></ion-icon>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
 {% else %}
-<div class="empty-state">
-    <div class="empty-state-icon">📚</div>
-    <div class="empty-state-title">No books in your library yet</div>
-    <div class="empty-state-text">Start building your collection by scanning a book or searching for one.</div>
-    <a href="/app/search" class="btn btn-primary">Search for Books</a>
-</div>
+    <div class="empty-state">
+        <div class="empty-state-icon" style="display:flex;align-items:center;justify-content:center;">
+            <img src="/static/icons/library.svg" width="48" height="48" alt="" aria-hidden="true" loading="lazy" style="filter:invert(1)">
+        </div>
+        <div class="empty-state-title">No books in your library yet</div>
+        <div class="empty-state-text">Start building your collection by scanning a book or searching for one.</div>
+        <a href="/app/search" class="btn btn-primary">Search for Books</a>
+    </div>
 {% endif %}
 
 <!-- Cover Art Selector Modal -->
-<div id="coverSelectorModal" class="cover-selector-modal">
-    <div class="cover-selector-content">
+<div id="coverSelectorModal" class="cover-selector-modal" role="dialog" aria-modal="true" aria-labelledby="coverSelectorTitle" aria-describedby="coverSelectorDesc">
+    <div class="cover-selector-content" tabindex="-1">
         <div class="cover-selector-header">
-            <h2 class="cover-selector-title">Select Cover Art</h2>
-            <button class="cover-selector-close" onclick="closeCoverSelector()">
-                <ion-icon name="close-outline"></ion-icon>
+            <h2 id="coverSelectorTitle" class="cover-selector-title">Select Cover Art</h2>
+            <p id="coverSelectorDesc" style="display:none;">Choose an alternative cover image for this book from available sources.</p>
+            <button class="cover-selector-close" type="button" onclick="closeCoverSelector()" aria-label="Close cover selector">
+                        <img src="/static/icons/logout.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-danger">
             </button>
         </div>
         <div id="coverOptionsContainer">
             <div class="cover-selector-loading">
-                <ion-icon name="hourglass-outline"></ion-icon>
+                <img src="/static/icons/search.svg" width="18" height="18" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
                 <p>Loading cover art options...</p>
             </div>
         </div>
@@ -1071,14 +158,14 @@
     const filterButtons = document.querySelectorAll('.filter-btn');
     const clearFiltersBtn = document.getElementById('clearFilters');
     const searchResultsInfo = document.getElementById('searchResultsInfo');
-    const librarySections = document.querySelectorAll('.library-section');
-    const libraryHero = document.querySelector('.library-hero');
+    const unifiedGrid = document.getElementById('booksUnifiedGrid');
+    const libraryHero = document.getElementById('featuredHero');
 
     let currentFilter = 'all';
     let currentSearchTerm = '';
 
     // Get all book cards with their data
-    const allBookCards = Array.from(document.querySelectorAll('.book-card')).map(card => {
+    const allBookCards = Array.from(document.querySelectorAll('#booksUnifiedGrid .book-card')).map(card => {
         const title = card.querySelector('.book-card-title')?.textContent.toLowerCase() || '';
         const author = card.querySelector('.book-card-author')?.textContent.toLowerCase() || '';
         const statusBadge = card.querySelector('.book-card-status');
@@ -1117,22 +204,6 @@
 
             element.style.display = visible ? '' : 'none';
             if (visible) visibleCount++;
-        });
-
-        // Switch between row and grid layout
-        const bookRows = document.querySelectorAll('.books-row');
-        bookRows.forEach(row => {
-            if (isFiltering) {
-                row.classList.add('grid-layout');
-            } else {
-                row.classList.remove('grid-layout');
-            }
-        });
-
-        // Show/hide sections based on visible books
-        librarySections.forEach(section => {
-            const visibleBooks = section.querySelectorAll('.book-card:not([style*="display: none"])');
-            section.style.display = visibleBooks.length > 0 ? '' : 'none';
         });
 
         // Hide hero if filtering
@@ -1189,80 +260,7 @@
         });
     }
 
-    // Horizontal scroll for each row independently
-    const bookRows = document.querySelectorAll('.books-row');
-    const mainContent = document.querySelector('.main-content');
-
-    // Track which row is currently hovered
-    let currentHoveredRow = null;
-
-    bookRows.forEach((scrollContainer, index) => {
-        // Mouse enter - mark this row as the active one
-        scrollContainer.addEventListener('mouseenter', () => {
-            currentHoveredRow = scrollContainer;
-        });
-
-        // Mouse leave - clear if this was the active row
-        scrollContainer.addEventListener('mouseleave', () => {
-            if (currentHoveredRow === scrollContainer) {
-                currentHoveredRow = null;
-            }
-        });
-
-        // Touch support for mobile
-        let touchStartX = 0;
-        let scrollLeftStart = 0;
-
-        scrollContainer.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            scrollLeftStart = scrollContainer.scrollLeft;
-        }, { passive: true });
-
-        scrollContainer.addEventListener('touchmove', (e) => {
-            const touchX = e.touches[0].clientX;
-            const deltaX = touchStartX - touchX;
-            scrollContainer.scrollLeft = scrollLeftStart + deltaX;
-        }, { passive: true });
-    });
-
-    // Global wheel handler on main-content to intercept ALL scroll events
-    if (mainContent) {
-        mainContent.addEventListener('wheel', (e) => {
-            // Check if we have horizontal scroll (deltaX)
-            const hasHorizontalScroll = Math.abs(e.deltaX) > 0;
-
-            if (hasHorizontalScroll) {
-                // If hovering over a row, scroll only that row
-                if (currentHoveredRow !== null) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Multiply by 25 for very fast, responsive scrolling
-                    // This makes trackpad scrolling feel much more natural
-                    const scrollAmount = e.deltaX * 25;
-                    currentHoveredRow.scrollLeft += scrollAmount;
-                } else {
-                    // Not hovering over any row, prevent horizontal scroll entirely
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }
-        }, { passive: false, capture: true });
-    }
-
-    // Add mouse wheel support for horizontal scrolling with Shift key
-    // This allows vertical scroll to work normally, but Shift+Scroll scrolls horizontally
-    bookRows.forEach((scrollContainer) => {
-        scrollContainer.addEventListener('wheel', (e) => {
-            // Only convert vertical to horizontal if Shift key is held
-            // This way normal vertical scrolling still works
-            if (e.shiftKey && Math.abs(e.deltaY) > 0) {
-                e.preventDefault();
-                // Use deltaY for horizontal scrolling with multiplier
-                scrollContainer.scrollLeft += e.deltaY * 2;
-            }
-        }, { passive: false });
-    });
+    // Removed custom wheel interception and shift-based horizontal scroll to simplify UX.
 
     // Cover Art Selector Functionality
     let currentBookId = null;
@@ -1280,7 +278,7 @@
         modal.classList.add('active');
 
         // Reset state
-        container.innerHTML = '<div class="cover-selector-loading"><ion-icon name="hourglass-outline"></ion-icon><p>Loading cover art options...</p></div>';
+    container.innerHTML = '<div class="cover-selector-loading"><img src="/static/icons/search.svg" width="24" height="24" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary"><p>Loading cover art options...</p></div>';
         saveBtn.disabled = true;
 
         try {
@@ -1383,12 +381,64 @@
         }
     }
 
+    // Delegate edit-cover-icon clicks
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('.edit-cover-icon');
+        if (target && target.dataset.bookId) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCoverSelector(target.dataset.bookId);
+        }
+    });
+
     // Close modal when clicking outside
-    document.getElementById('coverSelectorModal').addEventListener('click', (e) => {
+    const modalRoot = document.getElementById('coverSelectorModal');
+    modalRoot.addEventListener('click', (e) => {
         if (e.target.id === 'coverSelectorModal') {
             closeCoverSelector();
         }
     });
+
+    // Accessibility: focus trap & ESC close
+    function trapFocus(modal) {
+        const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+        const focusable = Array.from(modal.querySelectorAll(focusableSelectors)).filter(el => !el.disabled && el.offsetParent !== null);
+        if (focusable.length) {
+            focusable[0].focus();
+        }
+        function handleKey(e) {
+            if (e.key === 'Escape') {
+                closeCoverSelector();
+                return;
+            }
+            if (e.key === 'Tab') {
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        }
+        modal.addEventListener('keydown', handleKey);
+        modal.dataset.trapActive = 'true';
+    }
+
+    // Hook into openCoverSelector to apply focus trap after options load
+    const originalOpenCoverSelector = openCoverSelector;
+    openCoverSelector = async function(bookId) {
+        await originalOpenCoverSelector(bookId);
+        // Small delay to allow dynamic content injection
+        setTimeout(() => {
+            const modalContent = document.querySelector('#coverSelectorModal .cover-selector-content');
+            if (modalContent) {
+                trapFocus(modalContent);
+            }
+        }, 50);
+    };
 </script>
 {% endblock %}
 

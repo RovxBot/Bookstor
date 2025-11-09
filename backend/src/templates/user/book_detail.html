@@ -461,7 +461,9 @@
         {% if book.thumbnail %}
         <img src="{{ book.thumbnail }}" alt="{{ book.title }}" class="book-cover-large">
         {% else %}
-        <div class="book-cover-placeholder-large">📚</div>
+        <div class="book-cover-placeholder-large" style="display:flex;align-items:center;justify-content:center;">
+            <img src="/static/icons/library.svg" width="64" height="64" alt="" aria-hidden="true" loading="lazy" class="icon icon-primary">
+        </div>
         {% endif %}
 
         <div class="book-hero-info">
@@ -485,27 +487,21 @@
             <div class="book-meta">
                 {% if book.published_date %}
                 <div class="book-meta-item">
-                    <ion-icon name="calendar-outline"></ion-icon>
+                    
                     {{ book.published_date[:4] }}
                 </div>
                 {% endif %}
                 {% if book.page_count %}
                 <div class="book-meta-item">
-                    <ion-icon name="document-text-outline"></ion-icon>
+                    
                     {{ book.page_count }} pages
                 </div>
                 {% endif %}
                 {% if book.book_format %}
-                <div class="book-meta-item">
-                    <ion-icon name="albums-outline"></ion-icon>
-                    {{ book.book_format }}
-                </div>
+                <div class="book-meta-item">{{ book.book_format }}</div>
                 {% endif %}
                 {% if book.edition %}
-                <div class="book-meta-item">
-                    <ion-icon name="bookmark-outline"></ion-icon>
-                    {{ book.edition }}
-                </div>
+                <div class="book-meta-item">{{ book.edition }}</div>
                 {% endif %}
             </div>
 
@@ -516,20 +512,11 @@
             {% endif %}
 
             <div class="book-actions">
-                <button type="button" class="hero-btn hero-btn-primary" onclick="refreshMetadata()">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    Refresh Metadata
-                </button>
+                <button type="button" class="hero-btn hero-btn-primary" onclick="refreshMetadata()">Refresh Metadata</button>
                 {% if book.is_wishlist %}
-                <button type="button" class="hero-btn hero-btn-secondary" onclick="markAsPurchased()">
-                    <ion-icon name="cart-outline"></ion-icon>
-                    Purchased
-                </button>
+                <button type="button" class="hero-btn hero-btn-secondary" onclick="markAsPurchased()">Purchased</button>
                 {% else %}
-                <button type="button" class="hero-btn hero-btn-secondary" onclick="addToWishlist()">
-                    <ion-icon name="heart-outline"></ion-icon>
-                    Add to Wishlist
-                </button>
+                <button type="button" class="hero-btn hero-btn-secondary" onclick="addToWishlist()">Add to Wishlist</button>
                 {% endif %}
             </div>
         </div>
@@ -541,21 +528,18 @@
     <div class="detail-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h2 class="section-title" style="margin: 0;">
-                <ion-icon name="information-circle-outline"></ion-icon>
+                
                 Book Information
             </h2>
             <button type="button" class="btn btn-secondary" onclick="toggleEditMode()" id="editToggleBtn">
-                <ion-icon name="create-outline"></ion-icon>
+                
                 Edit
             </button>
         </div>
 
         <!-- View Mode -->
         <div id="viewMode">
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Title</div>
-                    <div class="info-value">{{ book.title }}</div>
+            <h2 class="section-title">Reading Status</h2>
                 </div>
                 {% if book.subtitle %}
                 <div class="info-item">
@@ -576,10 +560,7 @@
                 {% if book.publisher %}
                 <div class="info-item">
                     <div class="info-label">Publisher</div>
-                    <div class="info-value">{{ book.publisher }}</div>
-                </div>
-                {% endif %}
-                {% if book.published_date %}
+            <h2 class="section-title">Danger Zone</h2>
                 <div class="info-item">
                     <div class="info-label">Published</div>
                     <div class="info-value">{{ book.published_date }}</div>
@@ -694,7 +675,7 @@
                         Save Changes
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">
-                        <ion-icon name="close-outline"></ion-icon>
+            
                         Cancel
                     </button>
                 </div>
@@ -705,10 +686,7 @@
     <!-- Description -->
     {% if book.description %}
     <div class="detail-section">
-        <h2 class="section-title">
-            <ion-icon name="book-outline"></ion-icon>
-            Description
-        </h2>
+        <h2 class="section-title">Description</h2>
         <div class="book-description">{{ book.description }}</div>
     </div>
     {% endif %}
@@ -739,10 +717,7 @@
 
     <!-- Notes -->
     <div class="detail-section">
-        <h2 class="section-title">
-            <ion-icon name="create-outline"></ion-icon>
-            My Notes
-        </h2>
+        <h2 class="section-title">My Notes</h2>
         <form method="POST" action="/api/books/{{ book.id }}" id="notesForm">
             <textarea class="notes-textarea" name="notes" id="notes"
                       placeholder="Add your personal notes about this book...">{{ book.notes or '' }}</textarea>
@@ -860,12 +835,12 @@
             // Switch to edit mode
             viewMode.style.display = 'none';
             editMode.style.display = 'block';
-            editBtn.innerHTML = '<ion-icon name="eye-outline"></ion-icon> View';
+            editBtn.innerHTML = 'View';
         } else {
             // Switch to view mode
             viewMode.style.display = 'block';
             editMode.style.display = 'none';
-            editBtn.innerHTML = '<ion-icon name="create-outline"></ion-icon> Edit';
+            editBtn.innerHTML = 'Edit';
         }
     }
 
