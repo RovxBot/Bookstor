@@ -292,14 +292,7 @@ Book metadata lookups by ISBN can be cached in Redis to reduce repeated external
 Current cached objects:
 - Merged ISBN lookup results (safe merge payload)
 
-Current cached objects:
-
-- Merged ISBN lookup results (safe merge payload)
 Planned future cached objects:
-- Series gap computations (missing books per series per user)
-
-Planned future cached objects:
-
 - Series gap computations (missing books per series per user)
 Disable caching simply by omitting `REDIS_URL`.
 
