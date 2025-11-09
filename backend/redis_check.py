@@ -19,8 +19,8 @@ async def main():
     finally:
         try:
             await client.aclose()
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error during Redis client cleanup:", e)
 
 
 if __name__ == "__main__":
