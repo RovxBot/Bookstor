@@ -180,7 +180,6 @@ Access the web app at `http://localhost:8000/app/library` (or your server IP)
 ### Mobile App
 
 **Barcode Scanning:**
-
 1. Tap the floating scanner button (camera icon)
 2. Point camera at book's ISBN barcode
 3. Choose to add to Library or Wishlist
