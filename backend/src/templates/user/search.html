@@ -501,23 +501,35 @@
     yearFromEl.addEventListener('change', scheduleSearch);
     yearToEl.addEventListener('change', scheduleSearch);
 
+    // HTML escaping function to prevent XSS attacks
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str).replace(/[&<>"']/g, (m) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[m]));
+    }
+
     function createBookCard(book) {
         const thumbnail = book.thumbnail || '';
         const authors = book.authors ? book.authors.join(', ') : 'Unknown Author';
         const year = book.published_date ? book.published_date.substring(0, 4) : '';
         const pages = book.page_count ? `${book.page_count} pages` : '';
-        const dataAttrs = `data-book='${JSON.stringify({title:book.title, authors:book.authors, thumbnail:book.thumbnail, isbn:book.isbn})}'`;
+        const dataAttrs = `data-book='${escapeHtml(JSON.stringify({title:book.title, authors:book.authors, thumbnail:book.thumbnail, isbn:book.isbn}))}'`;
         return `
             <div class="result-card" ${dataAttrs}>
                 ${thumbnail ? 
-                    `<img src="${thumbnail}" alt="${book.title}" class="result-cover" loading="lazy">` :
+                    `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(book.title)}" class="result-cover" loading="lazy">` :
                     `<div class="result-cover-placeholder" style="display:flex;align-items:center;justify-content:center;">
                         <img src="/static/icons/library.svg" width="48" height="48" alt="" aria-hidden="true" loading="lazy" style="filter:invert(1)">
                     </div>`
                 }
                 <div class="result-info">
-                    <div class="result-title">${book.title}</div>
-                    <div class="result-authors">${authors}</div>
+                    <div class="result-title">${escapeHtml(book.title)}</div>
+                    <div class="result-authors">${escapeHtml(authors)}</div>
                     <div class="result-meta">${year} ${pages ? '• ' + pages : ''}</div>
                     <div class="result-actions">
                         <button class="btn btn-primary btn-sm" data-action="add-library">Add to Library</button>
